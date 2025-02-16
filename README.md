@@ -5,4 +5,3 @@
 ## Project Deadlines
 - Febuary 16th, 2025 - **System Prototype**
  - This deadline requires us to have a functioning prototype that authenticates users and allow them to upload receipt data through the website. It should also allow for employers to see the month to month spending of their company.
- - 
