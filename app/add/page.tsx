@@ -5,7 +5,6 @@ import { db } from "../firebase"; // Adjust path to your firebase.js or firebase
 import { collection, onSnapshot, addDoc } from "firebase/firestore";
 import Link from "next/link";
 
-
 // Define Expense type
 interface Expense {
   id: string;
@@ -28,7 +27,7 @@ export default function MenuPage() {
         id: doc.id,
         ...doc.data(),
       })) as Expense[];
-      
+
       setExpenses(updatedExpenses);
     });
 
@@ -45,11 +44,17 @@ export default function MenuPage() {
     }
 
     try {
+      // Add the expense to Firestore
       await addDoc(collection(db, "expenses"), {
         description,
         amount: parseFloat(amount),
         timestamp: new Date(),
       });
+
+      // Show an alert that the expense was added
+      alert(`${description} added with amount: $${amount}`);
+
+      // Clear the form
       setDescription("");
       setAmount("");
     } catch (err) {
@@ -82,16 +87,6 @@ export default function MenuPage() {
             Add Expense
           </button>
         </form>
-
-        {/* Display Expenses */}
-        <h2>Current Expenses</h2>
-        <ul>
-          {expenses.map((expense) => (
-            <li key={expense.id}>
-              {expense.description}: ${expense.amount}
-            </li>
-          ))}
-        </ul>
 
         {/* Link to go back to the main page */}
         <Link href="/">
