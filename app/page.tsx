@@ -35,9 +35,9 @@ export default function MainPage() {
       <h1 className="text-5xl font-bold mb-8">Select your action</h1>
 
       {/* Navigation Buttons */}
-      <Link href="/add">
+      <Link href="/upload">
         <button className="bg-blue-500 text-white p-2 rounded mb-3">
-          Go to Expenses
+          Go to Receipt Upload
         </button>
       </Link>
 
