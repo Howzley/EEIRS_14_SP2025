@@ -10,6 +10,7 @@ interface Expense {
   id: string;
   description: string;
   amount: number;
+  category: string; // Added category to the Expense type
   timestamp: any;
 }
 
@@ -43,12 +44,18 @@ export default function EditPage() {
   };
 
   // Handle expense modification
-  const handleUpdate = async (id: string, updatedDescription: string, updatedAmount: number) => {
+  const handleUpdate = async (
+    id: string,
+    updatedDescription: string,
+    updatedAmount: number,
+    updatedCategory: string // Added category to update
+  ) => {
     try {
       const expenseRef = doc(db, "expenses", id);
       await updateDoc(expenseRef, {
         description: updatedDescription,
         amount: updatedAmount,
+        category: updatedCategory, // Updating category
       });
       alert("Expense updated successfully.");
     } catch (err) {
@@ -56,48 +63,84 @@ export default function EditPage() {
     }
   };
 
+  // Group expenses by category
+  const groupedExpenses = expenses.reduce((groups: { [key: string]: Expense[] }, expense) => {
+    const { category } = expense;
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(expense);
+    return groups;
+  }, {});
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <h1 className="text-3xl font-bold mb-4">Edit Expenses</h1>
 
-      {/* Displaying Expenses */}
-      <ul className="space-y-4">
-        {expenses.map((expense) => (
-          <li key={expense.id} className="flex flex-col gap-2">
-            <div>
-              <strong>{expense.description}</strong>: ${expense.amount}
-            </div>
+      {/* Displaying Expenses by Category */}
+      {Object.keys(groupedExpenses).map((category) => (
+        <div key={category} className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">{category}</h2>
 
-            {/* Form to edit expense */}
-            <input
-              type="text"
-              defaultValue={expense.description}
-              className="border p-2 text-black"
-              onChange={(e) => (expense.description = e.target.value)} // Handle description change
-            />
-            <input
-              type="number"
-              defaultValue={expense.amount}
-              className="border p-2 text-black"
-              onChange={(e) => (expense.amount = parseFloat(e.target.value))} // Handle amount change
-            />
-            <button
-              onClick={() => handleUpdate(expense.id, expense.description, expense.amount)}
-              className="bg-blue-500 text-white p-2 rounded"
-            >
-              Update Expense
-            </button>
+          <ul className="space-y-4">
+            {groupedExpenses[category].map((expense) => (
+              <li key={expense.id} className="flex flex-col gap-2">
+                <div>
+                  <strong>{expense.description}</strong>: ${expense.amount}
+                </div>
 
-            {/* Delete Button */}
-            <button
-              onClick={() => handleDelete(expense.id)}
-              className="bg-red-500 text-white p-2 rounded"
-            >
-              Delete Expense
-            </button>
-          </li>
-        ))}
-      </ul>
+                {/* Form to edit expense */}
+                <input
+                  type="text"
+                  defaultValue={expense.description}
+                  className="border p-2 text-black"
+                  onChange={(e) => (expense.description = e.target.value)} // Handle description change
+                />
+                <input
+                  type="number"
+                  defaultValue={expense.amount}
+                  className="border p-2 text-black"
+                  onChange={(e) => (expense.amount = parseFloat(e.target.value))} // Handle amount change
+                />
+                <select
+                  value={expense.category}
+                  onChange={(e) => (expense.category = e.target.value)} // Handle category change
+                  className="border p-2 text-black"
+                >
+                  <option value="travel">Travel</option>
+                  <option value="meals">Meals</option>
+                  <option value="office supplies">Office Supplies</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="training">Training</option>
+                  <option value="transportation">Transportation</option>
+                </select>
+
+                <button
+                  onClick={() =>
+                    handleUpdate(
+                      expense.id,
+                      expense.description,
+                      expense.amount,
+                      expense.category
+                    )
+                  }
+                  className="bg-blue-500 text-white p-2 rounded"
+                >
+                  Update Expense
+                </button>
+
+                {/* Delete Button */}
+                <button
+                  onClick={() => handleDelete(expense.id)}
+                  className="bg-red-500 text-white p-2 rounded"
+                >
+                  Delete Expense
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
 
       {/* Back to Main Page */}
       <Link href="/">
