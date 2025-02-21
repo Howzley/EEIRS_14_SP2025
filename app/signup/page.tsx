@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { auth } from "../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // Import Link component for navigation
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
@@ -53,6 +54,13 @@ const SignUpPage = () => {
           Sign Up
         </button>
       </form>
+      
+      {/* Button to navigate to login page */}
+      <Link href="/login">
+        <button className="mt-4 bg-gray-500 text-white p-2 rounded">
+          Already have an account? Login
+        </button>
+      </Link>
     </div>
   );
 };
