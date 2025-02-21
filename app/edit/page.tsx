@@ -1,69 +1,93 @@
 // app/edit/page.tsx
-"use client";
-import { useState, useEffect } from "react";
-import { db } from "../firebase"; // Adjust the path to your firebase.js or firebase.ts
-import { collection, onSnapshot, updateDoc, doc, deleteDoc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+"use client"; // Ensures this code runs only on the client-side in Next.js.
 
-// Define Expense type
+// Import necessary React hooks and Firebase utilities
+import { useState, useEffect } from "react";
+import { db, auth } from "../firebase"; // Import Firebase database and authentication instance
+import {
+  collection,
+  onSnapshot,
+  updateDoc,
+  doc,
+  deleteDoc,
+  query,
+  where,
+  getDoc
+} from "firebase/firestore"; // Import Firestore functions
+import Link from "next/link"; // Import Next.js Link for navigation
+import { Slabo_13px } from "next/font/google"; // Import a Google font (not used in this snippet)
+
+// Define the Expense type to ensure type safety in TypeScript
 interface Expense {
   id: string;
   description: string;
   amount: number;
-  category: string; // Added category to the Expense type
-  timestamp: any;
+  category: string; // Added category field
+  timestamp: any; // Timestamp of the expense entry
 }
 
+// Define the main component
 export default function EditPage() {
+  // State variables to store expenses, user role, and user ID
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [user, setUser] = useState<any>(null); // To track authenticated user
-  const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Firebase Auth check
+  // Fetch the logged-in user's role when the component mounts
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user); // Set the user object if authenticated
-      } else {
-        setUser(null); // Set to null if not authenticated
-        router.push("/login"); // Redirect to login page if not authenticated
+    const fetchUserRole = async () => {
+      const currentUser = auth.currentUser; // Get currently logged-in user
+      if (currentUser) {
+        setUserId(currentUser.uid); // Store user ID
+        const userRef = doc(db, "users", currentUser.uid); // Reference to the user's document in Firestore
+        const userSnap = await getDoc(userRef); // Fetch user document
+
+        if (userSnap.exists()) {
+          setUserRole(userSnap.data().role); // Set user role from Firestore data
+        }
       }
-    });
+    };
+    fetchUserRole();
+  }, []); // Runs only once when component mounts
 
-    return () => unsubscribe();
-  }, [router]);
-
-  // Fetch expenses from Firestore (only if user is authenticated)
+  // Fetch expenses based on user role
   useEffect(() => {
-    if (!user) return; // Don't fetch expenses if not authenticated
+    if (userRole === null) return; // Ensure role is loaded before proceeding
 
-    const expensesRef = collection(db, "expenses");
-    const unsubscribe = onSnapshot(expensesRef, (snapshot) => {
+    let expenseQuery;
+    if (userRole === "supervisor") {
+      // Supervisors can access all expenses
+      expenseQuery = collection(db, "expenses");
+    } else if (userRole === "employee" && userId) {
+      // Employees can only access their own expenses
+      expenseQuery = query(collection(db, "expenses"), where("userId", "==", userId));
+    } else {
+      return;
+    }
+    
+    // Listen for changes in expenses collection and update state
+    const unsubscribe = onSnapshot(expenseQuery, (snapshot) => {
       const updatedExpenses = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Expense[];
-
       setExpenses(updatedExpenses);
     });
 
-    return () => unsubscribe();
-  }, [user]);
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, [userRole, userId]);
 
-  // Handle expense deletion
+  // Function to handle expense deletion
   const handleDelete = async (id: string) => {
     try {
-      await deleteDoc(doc(db, "expenses", id));
+      await deleteDoc(doc(db, "expenses", id)); // Delete the expense document from Firestore
       alert("Expense deleted successfully.");
     } catch (err) {
       alert("Error deleting expense: " + err);
     }
   };
 
-  // Handle expense modification
+  // Function to handle expense updates
   const handleUpdate = async (
     id: string,
     updatedDescription: string,
@@ -83,7 +107,7 @@ export default function EditPage() {
     }
   };
 
-  // Group expenses by category
+  // Group expenses by category for better display
   const groupedExpenses = expenses.reduce((groups: { [key: string]: Expense[] }, expense) => {
     const { category } = expense;
     if (!groups[category]) {
@@ -98,7 +122,7 @@ export default function EditPage() {
       <h1 className="text-3xl font-bold mb-4">Edit Expenses</h1>
 
       {/* If the user is not authenticated, show a message */}
-      {!user ? (
+      {!userId ? (
         <div className="text-red-500">You need to be logged in to view this page.</div>
       ) : (
         <>
@@ -169,7 +193,7 @@ export default function EditPage() {
         </>
       )}
 
-      {/* Back to Main Page */}
+      {/* Back button to navigate to the homepage */}
       <Link href="/">
         <button className="bg-gray-500 text-white p-2 rounded mt-4">
           Back to Home
