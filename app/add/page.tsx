@@ -113,11 +113,19 @@ const ExpenseForm = () => {
       </form>
       
       {/* Back to Main Page */}
-      <Link href="/">
-        <button className="bg-gray-500 text-white p-2 rounded mt-4">
-          Back to Home
-        </button>
-      </Link>
+      <div className="flex space-x-4 mt-4 mb-4">
+        <Link href="/upload">
+          <button className="bg-gray-500 text-white p-2 rounded mt-4">
+            Return to Upload
+          </button>
+        </Link>
+        <Link href="/">
+          <button className="bg-gray-500 text-white p-2 rounded mt-4">
+            Back to Home
+          </button>
+        </Link>
+        
+      </div>
     </div>
   );
 };
