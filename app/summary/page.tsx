@@ -5,8 +5,7 @@ import { db } from "../firebase"; // Adjust the import path based on your projec
 import { collection, onSnapshot } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { unsubscribe } from "diagnostics_channel";
+import { useRouter } from "next/navigation"; // Import useRouter for redirection
 
 // Define Expense type
 interface Expense {
@@ -21,29 +20,30 @@ export default function SummaryPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categoryTotals, setCategoryTotals] = useState<{ [key: string]: number }>({});
   const [totalExpense, setTotalExpense] = useState<number>(0);
-  const [user, setUser] = useState<any>(null);
-  const router = useRouter();
+  const [user, setUser] = useState<any>(null); // Store the user state for auth check
+  const router = useRouter(); // Router to redirect to login if needed
 
-  //Auth check
   useEffect(() => {
+    // Check the authentication state
     const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUser(user);
+        setUser(user); // If authenticated, set user state
       } else {
-        setUser(null);
-        router.push("/login");
+        setUser(null); // If not authenticated, set user to null
+        router.push("/login"); // Redirect to login page
       }
     });
-    return () => unsubscribe();
+
+    return () => unsubscribeAuth(); // Cleanup auth state listener
   }, [router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) return; // Don't fetch expenses if no user is logged in
 
     const expensesRef = collection(db, "expenses");
 
-    // Remove the query for the current month for debugging
+    // Listen to Firestore updates
     const unsubscribe = onSnapshot(expensesRef, (snapshot) => {
       const updatedExpenses = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -74,9 +74,12 @@ export default function SummaryPage() {
       setCategoryTotals(categoryTotals);
     });
 
-    // Cleanup: Unsubscribe when component unmounts
-    return () => unsubscribe();
-  }, []);
+    return () => unsubscribe(); // Cleanup Firestore listener
+  }, [user]); // Re-run the effect when the user state changes
+
+  if (!user) {
+    return null; // Or a loading spinner if you'd like to show something while checking auth
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
