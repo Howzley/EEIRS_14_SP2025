@@ -1,7 +1,9 @@
 // app/menu/page.tsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation"; // Import useRouter from next/navigation
+import { auth } from "../firebase"; // Assuming you have firebase initialized in firebase.js
+import { onAuthStateChanged } from "firebase/auth"; // Firebase Auth function
 import { db } from "../firebase"; // Assuming you have firebase initialized in firebase.js
 import { addDoc, collection } from "firebase/firestore"; // Firebase Firestore functions
 import Link from "next/link";
@@ -11,7 +13,23 @@ const ExpenseForm = () => {
   const [description, setDescription] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<any>(null); // User state for authentication
   const router = useRouter(); // Initialize router for navigation
+
+  // Authentication check
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.push("/login");  // Redirect to login if not logged in
+      } else {
+        setUser(user);  
+        setLoading(false);  
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup the subscription when component unmounts
+  }, [router]);
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +64,10 @@ const ExpenseForm = () => {
       alert(`Data entered: \nDescription: ${description}\nAmount: $${amount}\nCategory: ${category}`);
     }
   };
+
+  if (loading) {
+    return <div>Loading...</div>;  // Show loading state until authentication is checked
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">

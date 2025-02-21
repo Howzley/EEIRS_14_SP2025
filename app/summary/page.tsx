@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase"; // Adjust the import path based on your project structure
 import { collection, onSnapshot } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { unsubscribe } from "diagnostics_channel";
 
 // Define Expense type
 interface Expense {
@@ -18,8 +21,26 @@ export default function SummaryPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categoryTotals, setCategoryTotals] = useState<{ [key: string]: number }>({});
   const [totalExpense, setTotalExpense] = useState<number>(0);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  //Auth check
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
+        router.push("/login");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   useEffect(() => {
+    if (!user) return;
+
     const expensesRef = collection(db, "expenses");
 
     // Remove the query for the current month for debugging

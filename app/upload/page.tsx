@@ -3,11 +3,28 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { auth } from "../firebase"; 
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function FileUploadPage() {
   const [file, setFile] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null); 
   const router = useRouter();
-  
+
+  // Firebase Auth check
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user); 
+      } else {
+        setUser(null);
+        router.push("/login"); 
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
   // Will handle the selection of files
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -31,7 +48,11 @@ export default function FileUploadPage() {
   const handleSkip = () => {
     router.push("/add"); // Navigate to add page without receipt to scan
   };
-  
+
+  if (!user) {
+    return null; // Optionally, you can show a loading indicator or redirect if the user is not authenticated.
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
       <h1 className="text-2xl font-bold">Upload a Receipt</h1>
