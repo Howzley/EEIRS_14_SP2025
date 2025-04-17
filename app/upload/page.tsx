@@ -9,6 +9,7 @@ import { onAuthStateChanged } from "firebase/auth";
 export default function FileUploadPage() {
   const [file, setFile] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null); 
+  const [result, setResult] = useState<any>(null)
   const router = useRouter();
 
   // Firebase Auth check
@@ -43,6 +44,26 @@ export default function FileUploadPage() {
     const queryParam = []; // To store the data after scanning the image
     router.push(`/add`); // Line to be implemented, will send a data container with all the scanned information.
   };
+
+  const handleUpload = async () => {
+    if(!file) return
+
+    const formData = new FormData();
+    const blob = await fetch(file).then(r => r.blob()); // Convert the base64 string to a Blob
+    formData.append("file", blob); // Append the file to the FormData object
+
+    const res = await fetch('http://localhost:8000/scan-receipt', {
+      method: 'POST',
+      body: formData,
+    })
+    
+    const data = await res.json();
+    setResult(data.data);
+
+    const encodedData = encodeURIComponent(btoa(JSON.stringify(data.data)));
+    router.push(`/add?data=${encodedData}`); // Redirect to the add page with the scanned data
+
+  }
   
   // For when user skips receipt
   const handleSkip = () => {
@@ -73,7 +94,7 @@ export default function FileUploadPage() {
       {/* Buttons */}
       <div className="flex space-x-4 mt-4 mb-4">
         <button
-          onClick={handleSubmit}
+          onClick={handleUpload}
           className="p-2 bg-blue-500 text-white rounded"
         >
           Scan

@@ -16,6 +16,21 @@ const ExpenseForm = () => {
   const [user, setUser] = useState<any>(null); // User state for authentication
   const router = useRouter(); // Initialize router for navigation
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const encodedData = params.get("data");
+    if (encodedData) {
+      try {
+        const decoded = JSON.parse(atob(decodeURIComponent(encodedData)));
+        if (decoded.Total) setAmount(decoded.Total);
+        if (decoded.Store) setDescription(decoded.Store);  
+      
+      } catch (err) {
+        console.error("Error decoding data: ", err);
+      }
+    }
+  }, []);
+
   // Authentication check
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -28,7 +43,7 @@ const ExpenseForm = () => {
     });
 
     return () => unsubscribe(); // Cleanup the subscription when component unmounts
-  }, [router]);
+  }, [router]); 
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
