@@ -1,4 +1,3 @@
-// app/components/Navbar.tsx
 "use client";
 
 import Link from "next/link";
@@ -9,9 +8,6 @@ import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const path = usePathname();
-  // Don’t show navbar on login or signup pages
-  if (path === "/login" || path === "/signup") return null;
-
   const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
 
@@ -21,6 +17,9 @@ export default function Navbar() {
       else router.push("/login");
     });
   }, [router]);
+
+  // Do conditional rendering AFTER declaring hooks
+  if (path === "/login" || path === "/signup") return null;
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-gray-900 shadow-md h-16 flex items-center justify-between px-6 z-50">
