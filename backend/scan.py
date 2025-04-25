@@ -4,6 +4,7 @@ import re
 import numpy as np
 from pdf2image import convert_from_path
 from PIL import Image
+import io
 
 # Set up Tesseract path (Modify if necessary)
 # pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"  # Uncomment if needed
@@ -92,9 +93,6 @@ def parse_receipt_text(text):
     items = [(clean_item_name(name), price) for name, price in raw_items 
             if is_valid_item(name) and not any(keyword in name for keyword in ignore_keywords)]
 
-
-
-
     return {
         "Store": store_name,
         "Phone": phone,
@@ -107,7 +105,7 @@ def parse_receipt_text(text):
         "Items": items
     }
 
-file_path = "receipts/SampleReceipt-03.jpg"  # Change this to the path of your file
+""" file_path = "receipts/SampleReceipt-03.jpg"  # Change this to the path of your file
 
 if file_path.lower().endswith(".pdf"):
     receipt_info = process_pdf(file_path)
@@ -117,4 +115,11 @@ else:
 # Print results
 for i, receipt in enumerate(receipt_info):
     print(f"\n=== Receipt Page {i+1} ===")
-    print(receipt)
+    print(receipt) """
+    
+def scan_receipt_from_bytes(image_bytes: bytes):
+    image = Image.open(io.BytesIO(image_bytes))
+    processed_image = preprocess_image(image)
+    extracted_text = extract_text(processed_image)
+    receipt_data = parse_receipt_text(extracted_text)
+    return receipt_data
