@@ -22,7 +22,7 @@ import { Slabo_13px } from "next/font/google"; // Import a Google font (not used
 interface Expense {
   id: string;
   description: string;
-  Total: number;
+  total: number;
   category: string; // Added category field
   timestamp: any; // Timestamp of the expense entry
   refPath: string;
@@ -121,7 +121,7 @@ export default function EditPage() {
   
       await updateDoc(expenseRef, {
         description: updatedDescription,
-        Total: updatedTotal,
+        total: updatedTotal,
         category: updatedCategory,
       });
       alert("Expense updated successfully.");
@@ -140,9 +140,10 @@ export default function EditPage() {
     return groups;
   }, {});
 
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold mb-4">Edit Expenses</h1>
+      <h1 className="text-3xl font-bold mb-4">Manage Expenses</h1>
 
       {/* If the user is not authenticated, show a message */}
       {!userId ? (
@@ -158,7 +159,7 @@ export default function EditPage() {
                 {groupedExpenses[category].map((expense) => (
                   <li key={expense.id} className="flex flex-col gap-2">
                     <div>
-                      <strong>{expense.description}</strong>: ${expense.Total}
+                      <strong>{expense.description}</strong>: ${expense.total}
                     </div>
 
                     {/* Form to edit expense */}
@@ -170,9 +171,9 @@ export default function EditPage() {
                     />
                     <input
                       type="number"
-                      defaultValue={expense.Total}
+                      defaultValue={expense.total}
                       className="border p-2 text-black dark:text-white"
-                      onChange={(e) => (expense.Total = parseFloat(e.target.value))} // Handle amount change
+                      onChange={(e) => (expense.total = parseFloat(e.target.value))} // Handle amount change
                     />
                     <select
                       value={expense.category}
@@ -192,7 +193,7 @@ export default function EditPage() {
                         handleUpdate(
                           expense.id,
                           expense.description,
-                          expense.Total,
+                          expense.total,
                           expense.category,
                           expense.refPath
                         )
