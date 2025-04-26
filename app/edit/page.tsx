@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { db, auth } from "../firebase"; // Import Firebase database and authentication instance
 import {
   collection,
+  collectionGroup,
   onSnapshot,
   updateDoc,
   doc,
@@ -24,6 +25,7 @@ interface Expense {
   amount: number;
   category: string; // Added category field
   timestamp: any; // Timestamp of the expense entry
+  refPath: string;
 }
 
 // Define the main component
@@ -52,35 +54,47 @@ export default function EditPage() {
 
   // Fetch expenses based on user role
   useEffect(() => {
-    if (userRole === null) return; // Ensure role is loaded before proceeding
-
+    if (userRole === null) return;
+  
     let expenseQuery;
     if (userRole === "supervisor") {
-      // Supervisors can access all expenses
-      expenseQuery = collection(db, "expenses");
+      // Supervisors can access all receipts from all users
+      expenseQuery = collectionGroup(db, "receipts");
     } else if (userRole === "employee" && userId) {
-      // Employees can only access their own expenses
-      expenseQuery = query(collection(db, "expenses"), where("userId", "==", userId));
+      // Employees can only access their own receipts subcollection
+      expenseQuery = collection(db, "users", userId, "receipts");
     } else {
       return;
     }
-    
-    // Listen for changes in expenses collection and update state
+  
     const unsubscribe = onSnapshot(expenseQuery, (snapshot) => {
       const updatedExpenses = snapshot.docs.map((doc) => ({
         id: doc.id,
+        // Save the full path for supervisor actions
+        refPath: doc.ref.path, 
         ...doc.data(),
       })) as Expense[];
       setExpenses(updatedExpenses);
     });
-
-    return () => unsubscribe(); // Cleanup listener on unmount
+  
+    return () => unsubscribe();
   }, [userRole, userId]);
 
   // Function to handle expense deletion
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, refPath?: string) => {
     try {
-      await deleteDoc(doc(db, "expenses", id)); // Delete the expense document from Firestore
+      let docRef;
+      if (userRole === "supervisor" && refPath) {
+        // For supervisor, use the document's full path
+        docRef = doc(db, refPath);
+      } else if (userRole === "employee" && userId) {
+        // For employee, use user's receipts subcollection
+        docRef = doc(db, "users", userId, "receipts", id);
+      } else {
+        throw new Error("No permission or path info.");
+      }
+  
+      await deleteDoc(docRef);
       alert("Expense deleted successfully.");
     } catch (err) {
       alert("Error deleting expense: " + err);
@@ -92,14 +106,23 @@ export default function EditPage() {
     id: string,
     updatedDescription: string,
     updatedAmount: number,
-    updatedCategory: string // Added category to update
+    updatedCategory: string,
+    refPath?: string
   ) => {
     try {
-      const expenseRef = doc(db, "expenses", id);
+      let expenseRef;
+      if (userRole === "supervisor" && refPath) {
+        expenseRef = doc(db, refPath);
+      } else if (userRole === "employee" && userId) {
+        expenseRef = doc(db, "users", userId, "receipts", id);
+      } else {
+        throw new Error("No permission or path info.");
+      }
+  
       await updateDoc(expenseRef, {
         description: updatedDescription,
         amount: updatedAmount,
-        category: updatedCategory, // Updating category
+        category: updatedCategory,
       });
       alert("Expense updated successfully.");
     } catch (err) {
@@ -170,7 +193,8 @@ export default function EditPage() {
                           expense.id,
                           expense.description,
                           expense.amount,
-                          expense.category
+                          expense.category,
+                          expense.refPath
                         )
                       }
                       className="bg-blue-500 text-white p-2 rounded"
@@ -180,7 +204,7 @@ export default function EditPage() {
 
                     {/* Delete Button */}
                     <button
-                      onClick={() => handleDelete(expense.id)}
+                      onClick={() => handleDelete(expense.id, expense.refPath)}
                       className="bg-red-500 text-white p-2 rounded"
                     >
                       Delete Expense

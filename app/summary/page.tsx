@@ -41,7 +41,7 @@ export default function SummaryPage() {
   useEffect(() => {
     if (!user) return; // Don't fetch expenses if no user is logged in
 
-    const expensesRef = collection(db, "expenses");
+    const expensesRef = collection(db, "users", user.uid, "receipts");
 
     // Listen to Firestore updates
     const unsubscribe = onSnapshot(expensesRef, (snapshot) => {
