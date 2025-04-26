@@ -7,6 +7,7 @@ import { db } from "../firebase"; // Assuming you have firebase initialized in f
 import { addDoc, collection } from "firebase/firestore"; // Firebase Firestore functions
 import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
+import { updateDoc } from "firebase/firestore"; // Import Firestore functions
 
 const ExpenseForm = () => {
   const [location, setLocation] = useState<string>("");
@@ -24,6 +25,11 @@ const ExpenseForm = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [user, setUser] = useState<any>(null); // User state for authentication
   const [userD, setData] = useState<any>(null);
+
+  const [categoryMap, setCategoryMap] = useState<{[category: string]: string[]}>({});
+  const [subcategory, setSubcategory] = useState<string>("");
+  const [showCustomSub, setShowCustomSub] = useState<boolean>(false);
+
   const router = useRouter(); // Initialize router for navigation
 
   useEffect(() => {
@@ -51,7 +57,9 @@ const ExpenseForm = () => {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
-          setData(userSnap.data()); 
+          const data = userSnap.data();
+          setData(data);
+          setCategoryMap(data.categoryMap || {});  // If it's undefined, set as empty object
         }
         setLoading(false);
       }
@@ -61,7 +69,7 @@ const ExpenseForm = () => {
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!location || !DOP || !total || !description || !category) {
+    if (!location || !DOP || !total || !description || !category || !subcategory) {
       setError("Please fill out all required fields.");
       return;
     }
@@ -70,23 +78,36 @@ const ExpenseForm = () => {
     try {
       // Add expense to Firestore
       await addDoc(collection(db, "users", user.uid, "receipts"), {
-        ReceiptName: RName,
-        UserName: UName,
-        Location: location,
-        PhoneNum: phone,
-        Address: address,
-        Website: website,
-        Day: DOP,
-        Time: TOP,
-        PayMethod: payMethod,
-        Total: total, // (Hopefully not needed anymore) Convert amount to number before storing
+        receiptName: RName,
+        userName: UName,
+        location: location,
+        phoneNum: phone,
+        address: address,
+        website: website,
+        day: DOP,
+        time: TOP,
+        payMethod: payMethod,
+        total: total, // (Hopefully not needed anymore) Convert amount to number before storing
         description,
         category,
         userId: user.uid,
         date: new Date(),
-        Status: "Pending",
-        Comments: "",
+        status: "Pending",
+        comments: "",
+        subcategory,
       });
+      // Now update the user's categoryMap if necessary
+      if (!categoryMap[category] || !categoryMap[category].includes(subcategory)) {
+        const updatedMap = {...categoryMap};
+        if (!updatedMap[category]) {
+          updatedMap[category] = [];
+        }
+        updatedMap[category].push(subcategory);
+        await updateDoc(doc(db, "users", user.uid), {
+          categoryMap: updatedMap,
+        });
+        setCategoryMap(updatedMap);
+      }
       // Clear the form after successful submission
       setLocation("");
       setPhone("");
@@ -205,8 +226,12 @@ const ExpenseForm = () => {
           <select
             id="category"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setShowCustomSub(false); // reset subcategory input if category changes
+              setSubcategory("");
+            }}
+            className="p-2 border border-gray-300 rounded text-black w-full"
             required
           >
             <option value="">Select Category</option>
@@ -219,6 +244,59 @@ const ExpenseForm = () => {
             <option value="others">Others</option>
           </select>
         </div>
+        {category && (
+          <div>
+            <label htmlFor="subcategory" className="block mb-2">*Subcategory</label>
+            {categoryMap[category]?.length ? (
+              <select
+                id="subcategory"
+                value={subcategory}
+                onChange={(e) => {
+                  if (e.target.value === "__custom__") {
+                    setShowCustomSub(true);
+                    setSubcategory("");
+                  } else {
+                    setShowCustomSub(false);
+                    setSubcategory(e.target.value);
+                  }
+                }}
+                className="p-2 border border-gray-300 rounded text-black w-full"
+                required
+              >
+                <option value="">Select Subcategory</option>
+                {categoryMap[category].map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+                <option value="__custom__">Add new subcategory...</option>
+              </select>
+            ) : (
+              // If no subcategories, show input
+              <input
+                type="text"
+                id="subcategory"
+                placeholder="New Subcategory"
+                value={subcategory}
+                onChange={(e) => setSubcategory(e.target.value)}
+                className="p-2 border border-gray-300 rounded text-black"
+                required
+              />
+            )}
+
+            {/* If adding a new subcategory */}
+            {showCustomSub && (
+              <div className="mt-2 w-full">
+                <input
+                  type="text"
+                  placeholder="New Subcategory"
+                  value={subcategory}
+                  onChange={(e) => setSubcategory(e.target.value)}
+                  className="p-2 border border-gray-300 rounded text-black w-full"
+                  required
+                />
+              </div>
+            )}
+          </div>
+        )}
         <div>
           <input
             type="text"

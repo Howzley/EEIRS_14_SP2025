@@ -55,7 +55,7 @@ export default function MainPage() {
         <div className="grid gap-3">
           {[
             { href: "/upload",  label: "Upload Receipts" },
-            { href: "/edit",    label: "Edit Expenses" },
+            { href: "/edit",    label: "Manage Expenses" },
             { href: "/summary", label: "View Summary" },
           ].map((btn) => (
             <Link

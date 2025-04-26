@@ -22,7 +22,7 @@ import { Slabo_13px } from "next/font/google"; // Import a Google font (not used
 interface Expense {
   id: string;
   description: string;
-  Total: number;
+  total: number;
   category: string; // Added category field
   timestamp: any; // Timestamp of the expense entry
   refPath: string;
@@ -121,7 +121,7 @@ export default function EditPage() {
   
       await updateDoc(expenseRef, {
         description: updatedDescription,
-        Total: updatedTotal,
+        total: updatedTotal,
         category: updatedCategory,
       });
       alert("Expense updated successfully.");
@@ -140,75 +140,83 @@ export default function EditPage() {
     return groups;
   }, {});
 
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold mb-4">Edit Expenses</h1>
+      <h1 className="text-3xl font-bold mb-4">Manage Expenses</h1>
 
-      {/* Displaying Expenses by Category */}
-      {Object.keys(groupedExpenses).map((category) => (
-        <div key={category} className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">{category}</h2>
+      {/* If the user is not authenticated, show a message */}
+      {!userId ? (
+        <div className="text-red-500">You need to be logged in to view this page.</div>
+      ) : (
+        <>
+          {/* Displaying Expenses by Category */}
+          {Object.keys(groupedExpenses).map((category) => (
+            <div key={category} className="mb-8">
+              <h2 className="text-2xl font-bold mb-4">{category}</h2>
 
               <ul className="space-y-4">
                 {groupedExpenses[category].map((expense) => (
                   <li key={expense.id} className="flex flex-col gap-2">
                     <div>
-                      <strong>{expense.description}</strong>: ${expense.Total}
+                      <strong>{expense.description}</strong>: ${expense.total}
                     </div>
 
-                {/* Form to edit expense */}
-                <input
-                  type="text"
-                  defaultValue={expense.description}
-                  className="border p-2 text-black dark:text-white"
-                  onChange={(e) => (expense.description = e.target.value)} // Handle description change
-                />
-                <input
-                  type="number"
-                  defaultValue={expense.Total}
-                  className="border p-2 text-black dark:text-white"
-                  onChange={(e) => (expense.Total = parseFloat(e.target.value))} // Handle amount change
-                />
-                <select
-                  value={expense.category}
-                  onChange={(e) => (expense.category = e.target.value)} // Handle category change
-                  className="border p-2 text-black dark:text-white"
-                >
-                  <option value="travel">Travel</option>
-                  <option value="meals">Meals</option>
-                  <option value="office supplies">Office Supplies</option>
-                  <option value="entertainment">Entertainment</option>
-                  <option value="training">Training</option>
-                  <option value="transportation">Transportation</option>
-                </select>
+                    {/* Form to edit expense */}
+                    <input
+                      type="text"
+                      defaultValue={expense.description}
+                      className="border p-2 text-black dark:text-white"
+                      onChange={(e) => (expense.description = e.target.value)} // Handle description change
+                    />
+                    <input
+                      type="number"
+                      defaultValue={expense.total}
+                      className="border p-2 text-black dark:text-white"
+                      onChange={(e) => (expense.total = parseFloat(e.target.value))} // Handle amount change
+                    />
+                    <select
+                      value={expense.category}
+                      onChange={(e) => (expense.category = e.target.value)} // Handle category change
+                      className="border p-2 text-black dark:text-white"
+                    >
+                      <option value="travel">Travel</option>
+                      <option value="meals">Meals</option>
+                      <option value="office supplies">Office Supplies</option>
+                      <option value="entertainment">Entertainment</option>
+                      <option value="training">Training</option>
+                      <option value="transportation">Transportation</option>
+                    </select>
 
-                <button
-                  onClick={() =>
-                    handleUpdate(
-                      expense.id,
-                      expense.description,
-                      expense.Total,
-                      expense.category,
+                    <button
+                      onClick={() =>
+                        handleUpdate(
+                          expense.id,
+                          expense.description,
+                          expense.total,
+                          expense.category,
                           expense.refPath
-                    )
-                  }
-                  className="bg-blue-500 text-white p-2 rounded"
-                >
-                  Update Expense
-                </button>
+                        )
+                      }
+                      className="bg-blue-500 text-white p-2 rounded"
+                    >
+                      Update Expense
+                    </button>
 
-                {/* Delete Button */}
-                <button
-                  onClick={() => handleDelete(expense.id, expense.refPath)}
-                  className="bg-red-500 text-white p-2 rounded"
-                >
-                  Delete Expense
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleDelete(expense.id, expense.refPath)}
+                      className="bg-red-500 text-white p-2 rounded"
+                    >
+                      Delete Expense
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </>
+      )}
 
       {/* Back button to navigate to the homepage */}
       <Link href="/">
