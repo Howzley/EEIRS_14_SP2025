@@ -1,5 +1,4 @@
-// app/edit/page.tsx
-"use client"; // Ensures this code runs only on the client-side in Next.js.
+"use client"; // Ensures this code runs only on the client-side in Next.js
 
 // Import necessary React hooks and Firebase utilities
 import { useState, useEffect } from "react";
@@ -140,9 +139,8 @@ export default function EditPage() {
     return groups;
   }, {});
 
-// ------------------------------------------------------------------------------------------------------------------------------------------------------------------
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 dark:bg-gray-800 dark:text-white">
       <h1 className="text-3xl font-bold mb-4">Manage Expenses</h1>
 
       {/* If the user is not authenticated, show a message */}
@@ -166,19 +164,19 @@ export default function EditPage() {
                     <input
                       type="text"
                       defaultValue={expense.description}
-                      className="border p-2 text-black dark:text-white"
+                      className="border p-2 dark:bg-gray-700 dark:text-white"
                       onChange={(e) => (expense.description = e.target.value)} // Handle description change
                     />
                     <input
                       type="number"
                       defaultValue={expense.total}
-                      className="border p-2 text-black dark:text-white"
+                      className="border p-2 dark:bg-gray-700 dark:text-white"
                       onChange={(e) => (expense.total = parseFloat(e.target.value))} // Handle amount change
                     />
                     <select
                       value={expense.category}
                       onChange={(e) => (expense.category = e.target.value)} // Handle category change
-                      className="border p-2 text-black dark:text-white"
+                      className="border p-2 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="travel">Travel</option>
                       <option value="meals">Meals</option>

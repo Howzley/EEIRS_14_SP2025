@@ -14,14 +14,16 @@ export default function Navbar() {
   const router = useRouter();
 
   const [email, setEmail] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null); 
+  const [role, setRole] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
+  // Ensures component is mounted to handle dark mode
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Handle auth state changes
   useEffect(() => {
     return onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -38,9 +40,19 @@ export default function Navbar() {
     });
   }, [router]);
 
-  if (path === "/login" || path === "/signup") return null;
+  if (path === "/login" || path === "/signup") return null; // Hide navbar on login/signup pages
 
-  const isSupervisor = role === "supervisor"; 
+  // Ensure role is set before rendering
+  if (!role) {
+    return <div>Loading...</div>; // or null to hide the navbar until role is fetched
+  }
+
+  const isSupervisor = role === "supervisor"; // Check if user is supervisor
+
+  // Wait for the component to be mounted before rendering the theme button
+  if (!mounted) {
+    return null; // Prevent SSR mismatch
+  }
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-gray-900 shadow-md h-16 flex items-center justify-between px-6 z-50">
@@ -51,7 +63,6 @@ export default function Navbar() {
         <Link href="/edit">Manage</Link>
         <Link href="/summary">Summary</Link>
 
-        {}
         {isSupervisor && (
           <>
             <Link href="/review">Review</Link>
@@ -75,8 +86,8 @@ export default function Navbar() {
         )}
 
         <button
-          onClick={() => {
-            auth.signOut();
+          onClick={async () => {
+            await auth.signOut();
             router.push("/login");
           }}
           className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded focus:outline-none"

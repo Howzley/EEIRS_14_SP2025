@@ -1,4 +1,5 @@
-"use client";
+"use client"; // Ensures this code runs only on the client-side in Next.js
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation"; // Import useRouter from next/navigation
 import { auth } from "../firebase"; // Assuming you have firebase initialized in firebase.js
@@ -139,21 +140,21 @@ const ExpenseForm = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
+    <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 dark:text-white">
       <h1 className="text-3xl font-bold mb-4">Add New Expense (* Required)</h1>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      <form onSubmit={handleAddExpense} className="space-y-4">
+      <form onSubmit={handleAddExpense} className="space-y-4 w-full max-w-lg bg-white dark:bg-gray-800 p-6 rounded-md shadow-md">
         <div>
           <input
             type="text"
             placeholder="*Location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
             required
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div>
@@ -162,8 +163,8 @@ const ExpenseForm = () => {
             placeholder="Phone Number (000-000-0000)"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div>
@@ -172,9 +173,9 @@ const ExpenseForm = () => {
             placeholder="*Address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
             required
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div>
@@ -183,8 +184,8 @@ const ExpenseForm = () => {
             placeholder="Website"
             value={website}
             onChange={(e) => setSite(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div>
@@ -193,9 +194,9 @@ const ExpenseForm = () => {
             placeholder="*Date of Purchase (MM/DD/YYYY)"
             value={DOP}
             onChange={(e) => setDOP(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
             required
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div>
@@ -204,8 +205,8 @@ const ExpenseForm = () => {
             placeholder="Time (HH:MM AM/PM)"
             value={TOP}
             onChange={(e) => setTOP(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div>
@@ -214,13 +215,13 @@ const ExpenseForm = () => {
             placeholder="*Pay Method"
             value={payMethod}
             onChange={(e) => setPayMethod(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
             required
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div>
-          <label htmlFor="category" className="block mb-2">
+          <label htmlFor="category" className="block mb-2 dark:text-white">
             *Category
           </label>
           <select
@@ -231,7 +232,7 @@ const ExpenseForm = () => {
               setShowCustomSub(false); // reset subcategory input if category changes
               setSubcategory("");
             }}
-            className="p-2 border border-gray-300 rounded text-black w-full"
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white w-full"
             required
           >
             <option value="">Select Category</option>
@@ -246,7 +247,7 @@ const ExpenseForm = () => {
         </div>
         {category && (
           <div>
-            <label htmlFor="subcategory" className="block mb-2">*Subcategory</label>
+            <label htmlFor="subcategory" className="block mb-2 dark:text-white">*Subcategory</label>
             {categoryMap[category]?.length ? (
               <select
                 id="subcategory"
@@ -260,7 +261,7 @@ const ExpenseForm = () => {
                     setSubcategory(e.target.value);
                   }
                 }}
-                className="p-2 border border-gray-300 rounded text-black w-full"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white w-full"
                 required
               >
                 <option value="">Select Subcategory</option>
@@ -277,7 +278,7 @@ const ExpenseForm = () => {
                 placeholder="New Subcategory"
                 value={subcategory}
                 onChange={(e) => setSubcategory(e.target.value)}
-                className="p-2 border border-gray-300 rounded text-black"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
                 required
               />
             )}
@@ -290,7 +291,7 @@ const ExpenseForm = () => {
                   placeholder="New Subcategory"
                   value={subcategory}
                   onChange={(e) => setSubcategory(e.target.value)}
-                  className="p-2 border border-gray-300 rounded text-black w-full"
+                  className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white w-full"
                   required
                 />
               </div>
@@ -303,9 +304,9 @@ const ExpenseForm = () => {
             placeholder="*Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
             required
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div>
@@ -313,15 +314,15 @@ const ExpenseForm = () => {
             type="number"
             placeholder="*Total"
             value={total}
-            onChange={(e) => setTotal(e.target.value === "" ? 0 : parseFloat(e.target.value))} // Allow free input
-            className="p-2 border border-gray-300 rounded text-black"
+            onChange={(e) => setTotal(e.target.value === "" ? 0 : parseFloat(e.target.value))}
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded text-black dark:text-white"
             required
-            onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
+            onKeyDown={handleKeyDown}
           />
         </div>
         <button
           type="submit"
-          className="bg-blue-500 text-white p-2 rounded w-full"
+          className="bg-blue-500 dark:bg-blue-700 text-white p-2 rounded w-full"
         >
           Add Expense
         </button>
@@ -330,16 +331,15 @@ const ExpenseForm = () => {
       {/* Back to Main Page */}
       <div className="flex space-x-4 mt-4 mb-4">
         <Link href="/upload">
-          <button className="bg-gray-500 text-white p-2 rounded mt-4">
+          <button className="bg-gray-500 dark:bg-gray-700 text-white p-2 rounded mt-4">
             Return to Upload
           </button>
         </Link>
         <Link href="/">
-          <button className="bg-gray-500 text-white p-2 rounded mt-4">
+          <button className="bg-gray-500 dark:bg-gray-700 text-white p-2 rounded mt-4">
             Back to Home
           </button>
         </Link>
-        
       </div>
     </div>
   );
