@@ -10,6 +10,8 @@ const SignUpPage = () => {
   // State variables to handle input and errors
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [FName, setFname] = useState("");
+  const [LName, setLname] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -27,6 +29,8 @@ const SignUpPage = () => {
         email: user.email, // Stores the email
         role: "employee", // Default role assigned to a new user and can be changed in the database
         createdAt: new Date(), // Timestamp of account creation
+        Fname: FName, //User First Name
+        Lname: LName, //User Last Name
       });
 
       // Redirect to home page after successful sign-up
@@ -58,6 +62,24 @@ const SignUpPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="p-2 border border-gray-300 rounded text-black"
+          />
+        </div>
+        <div>
+          <input
+            type="text"
+            placeholder="First Name"
+            value={FName}
+            onChange={(e) => setFname(e.target.value)}
+            className="bg-gray-800 text-white p-2 border border-gray-300 rounded text-black"
+          />
+        </div>
+        <div>
+          <input
+            type="text"
+            placeholder="Last Name"
+            value={LName}
+            onChange={(e) => setLname(e.target.value)}
+            className="bg-gray-800 text-white p-2 border border-gray-300 rounded text-black"
           />
         </div>
         <button
