@@ -5,12 +5,22 @@ import { useRouter, usePathname } from "next/navigation";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 
 export default function Navbar() {
   const path = usePathname();
-  const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
 
+  const [email, setEmail] = useState<string | null>(null);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // mark mounted so theme is defined
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // auth listener
   useEffect(() => {
     return onAuthStateChanged(auth, (user) => {
       if (user) setEmail(user.email);
@@ -18,7 +28,7 @@ export default function Navbar() {
     });
   }, [router]);
 
-  // Do conditional rendering AFTER declaring hooks
+  // don’t show on auth pages
   if (path === "/login" || path === "/signup") return null;
 
   return (
@@ -31,9 +41,21 @@ export default function Navbar() {
         <Link href="/summary">Summary</Link>
       </div>
 
-      {/* Right-side user info + logout */}
+      {/* Right-side: email → toggle → logout */}
       <div className="flex items-center space-x-4">
         {email && <span className="text-sm text-gray-300">{email}</span>}
+
+        {/* only render toggle after mount */}
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            className="p-2 rounded bg-gray-700 hover:bg-gray-600 text-white"
+            aria-label="Toggle dark mode"
+          >
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
+        )}
+
         <button
           onClick={() => {
             auth.signOut();

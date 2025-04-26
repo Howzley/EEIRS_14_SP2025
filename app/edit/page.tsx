@@ -142,19 +142,19 @@ export default function EditPage() {
                     <input
                       type="text"
                       defaultValue={expense.description}
-                      className="border p-2 text-black"
+                      className="border p-2 text-black dark:text-white"
                       onChange={(e) => (expense.description = e.target.value)} // Handle description change
                     />
                     <input
                       type="number"
                       defaultValue={expense.amount}
-                      className="border p-2 text-black"
+                      className="border p-2 text-black dark:text-white"
                       onChange={(e) => (expense.amount = parseFloat(e.target.value))} // Handle amount change
                     />
                     <select
                       value={expense.category}
                       onChange={(e) => (expense.category = e.target.value)} // Handle category change
-                      className="border p-2 text-black"
+                      className="border p-2 text-black dark:text-white"
                     >
                       <option value="travel">Travel</option>
                       <option value="meals">Meals</option>
