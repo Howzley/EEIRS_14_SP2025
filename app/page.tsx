@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter }            from "next/navigation";
 import { auth }                 from "./firebase";
 import { onAuthStateChanged }   from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "./firebase"; // Assuming you have firebase initialized in firebase.js
 import Link                     from "next/link";
 
 export default function MainPage() {
@@ -12,12 +14,16 @@ export default function MainPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      if (!u) router.push("/login");
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) router.push("/login");
       else {
-        setUser(u);
+        setUser(user);
         setLoading(false);
-      }
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          setUser(userSnap.data());
+        }}
     });
     return unsubscribe;
   }, [router]);
@@ -40,7 +46,7 @@ export default function MainPage() {
             Welcome back,
           </p>
           <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-            {user.email}
+            {user ? `${user.Fname} ${user.Lname}` : "Guest"}
           </h1>
         </div>
 
