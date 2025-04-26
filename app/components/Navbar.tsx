@@ -48,7 +48,7 @@ export default function Navbar() {
       <div className="flex space-x-6 text-white">
         <Link href="/">Dashboard</Link>
         <Link href="/upload">Upload</Link>
-        <Link href="/edit">Edit</Link>
+        <Link href="/edit">Manage</Link>
         <Link href="/summary">Summary</Link>
 
         {}
