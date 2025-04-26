@@ -96,7 +96,7 @@ export default function SummaryPage() {
         {Object.entries(categoryTotals).map(([category, total]) => (
           <li key={category} className="flex justify-between mb-2 p-2 border-b">
             <span>{category}</span>
-            <span>${total.toFixed(2)}</span>
+            <span>${(total ?? 0).toFixed(2)}</span>
           </li>
         ))}
       </ul>
@@ -107,7 +107,7 @@ export default function SummaryPage() {
         {expenses.map((expense) => (
           <li key={expense.id} className="flex justify-between mb-2 p-2 border-b">
             <span>{expense.description}</span>
-            <span>${expense.amount.toFixed(2)}</span>
+            <span>${(expense.amount ?? 0).toFixed(2)}</span>
           </li>
         ))}
       </ul>
