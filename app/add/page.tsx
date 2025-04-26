@@ -7,7 +7,6 @@ import { db } from "../firebase"; // Assuming you have firebase initialized in f
 import { addDoc, collection } from "firebase/firestore"; // Firebase Firestore functions
 import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
-import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 
 const ExpenseForm = () => {
   const [location, setLocation] = useState<string>("");
