@@ -22,7 +22,7 @@ import { Slabo_13px } from "next/font/google"; // Import a Google font (not used
 interface Expense {
   id: string;
   description: string;
-  amount: number;
+  Total: number;
   category: string; // Added category field
   timestamp: any; // Timestamp of the expense entry
   refPath: string;
@@ -105,7 +105,7 @@ export default function EditPage() {
   const handleUpdate = async (
     id: string,
     updatedDescription: string,
-    updatedAmount: number,
+    updatedTotal: number,
     updatedCategory: string,
     refPath?: string
   ) => {
@@ -121,7 +121,7 @@ export default function EditPage() {
   
       await updateDoc(expenseRef, {
         description: updatedDescription,
-        amount: updatedAmount,
+        Total: updatedTotal,
         category: updatedCategory,
       });
       alert("Expense updated successfully.");
@@ -158,7 +158,7 @@ export default function EditPage() {
                 {groupedExpenses[category].map((expense) => (
                   <li key={expense.id} className="flex flex-col gap-2">
                     <div>
-                      <strong>{expense.description}</strong>: ${expense.amount}
+                      <strong>{expense.description}</strong>: ${expense.Total}
                     </div>
 
                     {/* Form to edit expense */}
@@ -170,9 +170,9 @@ export default function EditPage() {
                     />
                     <input
                       type="number"
-                      defaultValue={expense.amount}
+                      defaultValue={expense.Total}
                       className="border p-2 text-black dark:text-white"
-                      onChange={(e) => (expense.amount = parseFloat(e.target.value))} // Handle amount change
+                      onChange={(e) => (expense.Total = parseFloat(e.target.value))} // Handle amount change
                     />
                     <select
                       value={expense.category}
@@ -192,7 +192,7 @@ export default function EditPage() {
                         handleUpdate(
                           expense.id,
                           expense.description,
-                          expense.amount,
+                          expense.Total,
                           expense.category,
                           expense.refPath
                         )
