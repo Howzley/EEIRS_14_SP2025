@@ -37,15 +37,21 @@ const ExpenseForm = () => {
     const encodedData = params.get("data");
     if (encodedData) {
       try {
-        const decoded = JSON.parse(atob(decodeURIComponent(encodedData)));
-        if (decoded.Total) setTotal(decoded.Total);
-        if (decoded.Store) setDescription(decoded.Store);  
+        const decoded = JSON.parse(atob(decodeURIComponent(encodedData)));      
       
+        if (decoded.total_price) setTotal(decoded.total_price);
+        if (decoded.store_name) setDescription(decoded.store_name);
+        if (decoded.category) setCategory(decoded.category);
+        console.log("Decoded data: ", decoded);
+  
       } catch (err) {
         console.error("Error decoding data: ", err);
       }
     }
   }, []);
+  
+  
+  
 
   // Authentication check
   useEffect(() => {

@@ -1,125 +1,148 @@
 import cv2
 import pytesseract
-import re
 import numpy as np
 from pdf2image import convert_from_path
 from PIL import Image
 import io
+import re
+import json
+from google import genai
 
-# Set up Tesseract path (Modify if necessary)
-# pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"  # Uncomment if needed
+# =============== OCR Utilities ===============
 
-def preprocess_image(image):
-    """ Preprocess the image to minimize OCR errors (e.g., `0` -> `@`) """
-    gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)  # Convert PIL image to OpenCV format
+def preprocess_image(image: Image.Image) -> np.ndarray:
+    """Preprocess the image for better OCR accuracy."""
+    gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return thresh
 
+def extract_text(image: np.ndarray) -> str:
+    """Extract raw text from the image using Tesseract OCR."""
+    return pytesseract.image_to_string(image)
 
-def extract_text(image):
-    """ Extract text from image using Tesseract OCR """
-    raw_text = pytesseract.image_to_string(image)
-    return raw_text
+# =============== AI Parsing Utilities ===============
 
-def process_pdf(pdf_path):
-    """ Convert PDF to images, extract text, and parse receipt details """
-    images = convert_from_path(pdf_path)  # Convert PDF to images
-    all_receipt_data = []
+def generate_ai_response(extracted_text: str) -> dict | None:
+    """Send extracted text to Gemini and parse structured receipt data."""
+    client = genai.Client(api_key="AIzaSyCAPET-P6B1Kv27DT_iLoA7A_X_lOZBLIk")
+
+    prompt = f'''
+    You are an intelligent receipt parser. From the provided receipt text, precisely extract the following information.
+    Correct common OCR errors and typos. Completely ignore irrelevant text.
+
+    Extract:
+    - Store name
+    - Store phone number
+    - Store address (single line)
+    - Store website (if any)
+    - Date and time of purchase
+    - List of purchased items with their prices
+    - Total price (MUST be the largest monetary amount on the receipt)
+    - Payment method (e.g., credit card, cash)
+    - Category (e.g., groceries, electronics)
+    
+    For the field `category`, choose the most appropriate option from this exact list:
+        - travel
+        - meals
+        - office supplies
+        - entertainment
+        - training
+        - transportation
+        - others
+
+        If none are a good fit, use "others".
+        Do NOT create new categories. Only select from this list.
+        If the category is "groceries", use "meals" instead.
+
+
+    Return the information as this JSON object:
+    {{
+        "store_name": "",
+        "store_phone_number": "",
+        "store_address": "",
+        "store_website": "",
+        "date_time": "",
+        "purchased_items": [
+            {{"item_name": "", "price": ""}}
+        ],
+        "total_price": "",
+        "payment_method": "",
+        "category": ""
+    }}
+
+    Receipt Text:
+    {extracted_text}
+    '''
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
+        return json.loads(response.text)
+    except json.JSONDecodeError:
+        print("Warning: Gemini returned malformed JSON. Attempting auto-fix...")
+        fixed_json = fix_malformed_json(response.text)
+        try:
+            return json.loads(fixed_json)
+        except Exception as e:
+            print(f"Critical: Failed to fix malformed JSON. {e}")
+            return None
+    except Exception as e:
+        print(f"Error contacting Gemini: {e}")
+        return None
+
+def fix_malformed_json(bad_json: str) -> str:
+    """Attempt basic corrections to slightly broken JSON output."""
+    match = re.search(r'\{.*\}', bad_json, re.DOTALL)
+    if not match:
+        return ""
+    fixed = match.group(0)
+    fixed = fixed.replace('\n', '')
+    fixed = re.sub(r',\s*}', '}', fixed)
+    fixed = re.sub(r',\s*]', ']', fixed)
+    return fixed
+
+# =============== Receipt Processing ===============
+
+def parse_receipt_text(text: str) -> dict | None:
+    """Parse the OCR text using Gemini AI."""
+    return generate_ai_response(text)
+
+def process_pdf(pdf_path: str) -> list[dict]:
+    """Handle receipt PDFs by converting pages to images and processing each one."""
+    images = convert_from_path(pdf_path)
+    receipts = []
 
     for i, image in enumerate(images):
-        print(f"Processing page {i+1}...")
-        processed_image = preprocess_image(image)
-        extracted_text = extract_text(processed_image)
-        receipt_data = parse_receipt_text(extracted_text)
-        all_receipt_data.append(receipt_data)
+        print(f"Processing PDF page {i+1}...")
+        processed = preprocess_image(image)
+        extracted = extract_text(processed)
+        receipt_data = parse_receipt_text(extracted)
+        receipts.append(receipt_data)
 
-    return all_receipt_data
+    return receipts
 
-def process_image(image_path):
-    """ Process an image file, extract text, and parse receipt details """
+def process_image(image_path: str) -> dict | None:
+    """Handle receipt images directly."""
     image = Image.open(image_path)
-    processed_image = preprocess_image(image)
-    extracted_text = extract_text(processed_image)
-    receipt_data = parse_receipt_text(extracted_text)
-    return receipt_data
+    processed = preprocess_image(image)
+    extracted = extract_text(processed)
+    return parse_receipt_text(extracted)
 
-def parse_receipt_text(text):
-    """ Extract key information from OCR output using improved regex patterns """
+def scan_receipt_from_bytes(image_bytes: bytes) -> dict | None:
+    """Main entry for backend: receive uploaded receipt bytes, process, and return structured data."""
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+    except Exception as e:
+        print(f"Error loading image: {e}")
+        return None
 
-    store_name = re.search(r'^[A-Z][A-Za-z\s&]+', text)
-    store_name = store_name.group(0).strip() if store_name else "Unknown Store"
+    processed = preprocess_image(image)
+    extracted = extract_text(processed)
 
-    phone_match = re.search(r'(\(\d{3}\)\s*\d{3}[-.\s]\d{4}|\d{3}[-.\s]\d{3}[-.\s]\d{4})', text)
-    phone = phone_match.group(0) if phone_match else "Unknown Phone"
+    if len(extracted.strip()) < 50:
+        print("Warning: OCR output too small. Skipping AI call.")
+        return None
 
-    address_match = re.search(r'(\d+\s+[A-Za-z\s]+(?:Ave|St|Blvd|Rd|Dr|Lane|Way|Court))', text)
-    address = address_match.group(0) if address_match else "Unknown Address"
-
-    # Extract Website
-    website_match = re.search(r'(https?://[^\s]+|www\.[^\s]+|\w+\.(com|net|org|edu|gov))', text)
-    website = website_match.group(0) if website_match else "Unknown Website"
-
-    # Extract Date & Time
-    date_match = re.search(r'(\d{2}[/-]\d{2}[/-]\d{4}|\d{4}[/-]\d{2}[/-]\d{2})', text)
-    time_match = re.search(r'(\d{1,2}:\d{2}\s?(AM|PM)?)', text, re.IGNORECASE)
-    date = date_match.group(0) if date_match else "Unknown Date"
-    time = time_match.group(0) if time_match else "Unknown Time"
-
-    # Extract Total Amount
-    total_match = re.search(r'(?s:.*)Total\s?\$?(\d+\.\d{2})', text, re.IGNORECASE)
-    total = total_match.group(1) if total_match else "Unknown Total"
-
-    # Extract Payment Method
-    payment_match = re.search(r'(Visa|MasterCard|Amex|Discover|Cash|PayPal|Debit|Credit)', text, re.IGNORECASE)
-    payment_method = payment_match.group(0) if payment_match else "Unknown Payment Method"
-
-    ignore_keywords = ["Total", "You Saved", "Grand Total", "Order Total", "Payment", "Savings", "Change", "lb", "FOR"]
-
-    # Extract all items first
-    raw_items = re.findall(r'([A-Za-z][A-Za-z\s&-]+?)\s+(\d+\.\d{2})', text)
-
-    # Function to clean item names
-    def clean_item_name(name):
-        name = name.strip()  # Remove spaces and newlines
-        name = re.sub(r'^\b[A-Z]{1,2}\b\s*', '', name)  # Remove short uppercase prefixes like "F"
-        name = re.sub(r'[^A-Za-z\s&-]', '', name)  # Remove any leftover special characters
-        return name
-
-    # Function to exclude unwanted bulk pricing lines
-    def is_valid_item(name):
-        return not re.search(r'\d+\s*@\s*\d+\s*FOR', name)  # Exclude lines like "1 @ 2 FOR 7.00"
-
-    # Filter and clean extracted items
-    items = [(clean_item_name(name), price) for name, price in raw_items 
-            if is_valid_item(name) and not any(keyword in name for keyword in ignore_keywords)]
-
-    return {
-        "Store": store_name,
-        "Phone": phone,
-        "Address": address,
-        "Website": website,
-        "Date": date,
-        "Time": time,
-        "Total": total,
-        "Payment Method": payment_method,
-        "Items": items
-    }
-
-""" file_path = "receipts/SampleReceipt-03.jpg"  # Change this to the path of your file
-
-if file_path.lower().endswith(".pdf"):
-    receipt_info = process_pdf(file_path)
-else:
-    receipt_info = [process_image(file_path)]  # Wrap in a list for consistency
-
-# Print results
-for i, receipt in enumerate(receipt_info):
-    print(f"\n=== Receipt Page {i+1} ===")
-    print(receipt) """
-    
-def scan_receipt_from_bytes(image_bytes: bytes):
-    image = Image.open(io.BytesIO(image_bytes))
-    processed_image = preprocess_image(image)
-    extracted_text = extract_text(processed_image)
-    receipt_data = parse_receipt_text(extracted_text)
-    return receipt_data
+    return parse_receipt_text(extracted)
