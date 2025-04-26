@@ -18,12 +18,13 @@ export default function MainPage() {
       if (!user) router.push("/login");
       else {
         setUser(user);
-        setLoading(false);
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
           setUser(userSnap.data());
-        }}
+        }
+        setLoading(false);
+      }
     });
     return unsubscribe;
   }, [router]);
