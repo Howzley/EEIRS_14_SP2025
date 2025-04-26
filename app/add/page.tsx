@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation"; // Import useRouter from next/navigation
 import { auth } from "../firebase"; // Assuming you have firebase initialized in firebase.js
 import { onAuthStateChanged } from "firebase/auth"; // Firebase Auth function
@@ -21,6 +21,8 @@ const ExpenseForm = () => {
   const [description, setDescription] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<any>(null); // User state for authentication
   const [userD, setData] = useState<any>(null);
   const router = useRouter(); // Initialize router for navigation
 
