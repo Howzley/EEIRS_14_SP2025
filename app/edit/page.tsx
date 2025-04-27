@@ -1,11 +1,11 @@
-// app/edit/page.tsx
-"use client"; // Ensures this code runs only on the client-side in Next.js.
+"use client"; // Ensures this code runs only on the client-side in Next.js
 
 // Import necessary React hooks and Firebase utilities
 import { useState, useEffect } from "react";
 import { db, auth } from "../firebase"; // Import Firebase database and authentication instance
 import {
   collection,
+  collectionGroup,
   onSnapshot,
   updateDoc,
   doc,
@@ -20,10 +20,24 @@ import { Slabo_13px } from "next/font/google"; // Import a Google font (not used
 // Define the Expense type to ensure type safety in TypeScript
 interface Expense {
   id: string;
+  address: string;
+  comments: string;
+  day: string;
+  location: string;
+  payMethod: string;
+  phoneNum?: string;
+  receiptName: string;
+  status: string;
+  subcategory?: string;
+  time?: string;
+  userId: string;
+  userName?: string;
+  website?: string;
   description: string;
-  amount: number;
+  total: number;
   category: string; // Added category field
-  timestamp: any; // Timestamp of the expense entry
+  date: any; // Timestamp of the expense entry
+  refPath: string;
 }
 
 // Define the main component
@@ -32,6 +46,8 @@ export default function EditPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [currentExpense, setCurrentExpense] = useState<Expense | null>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
 
   // Fetch the logged-in user's role when the component mounts
   useEffect(() => {
@@ -52,36 +68,55 @@ export default function EditPage() {
 
   // Fetch expenses based on user role
   useEffect(() => {
-    if (userRole === null) return; // Ensure role is loaded before proceeding
-
+    if (userRole === null) return;
+  
     let expenseQuery;
     if (userRole === "supervisor") {
-      // Supervisors can access all expenses
-      expenseQuery = collection(db, "expenses");
+      // Supervisors can access all receipts from all users
+      expenseQuery = collectionGroup(db, "receipts");
     } else if (userRole === "employee" && userId) {
-      // Employees can only access their own expenses
-      expenseQuery = query(collection(db, "expenses"), where("userId", "==", userId));
+      // Employees can only access their own receipts subcollection
+      expenseQuery = collection(db, "users", userId, "receipts");
     } else {
       return;
     }
-    
-    // Listen for changes in expenses collection and update state
+  
     const unsubscribe = onSnapshot(expenseQuery, (snapshot) => {
       const updatedExpenses = snapshot.docs.map((doc) => ({
         id: doc.id,
+        // Save the full path for supervisor actions
+        refPath: doc.ref.path, 
         ...doc.data(),
       })) as Expense[];
       setExpenses(updatedExpenses);
     });
-
-    return () => unsubscribe(); // Cleanup listener on unmount
+  
+    return () => unsubscribe();
   }, [userRole, userId]);
 
+  // Function to open a popup
+  const openPopup = (expense: Expense) => {
+    setCurrentExpense(expense);
+    setPopupOpen(true);
+  };
+
   // Function to handle expense deletion
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, refPath?: string) => {
     try {
-      await deleteDoc(doc(db, "expenses", id)); // Delete the expense document from Firestore
+      let docRef;
+      if (userRole === "supervisor" && refPath) {
+        // For supervisor, use the document's full path
+        docRef = doc(db, refPath);
+      } else if (userRole === "employee" && userId) {
+        // For employee, use user's receipts subcollection
+        docRef = doc(db, "users", userId, "receipts", id);
+      } else {
+        throw new Error("No permission or path info.");
+      }
+  
+      await deleteDoc(docRef);
       alert("Expense deleted successfully.");
+      setPopupOpen(false);
     } catch (err) {
       alert("Error deleting expense: " + err);
     }
@@ -90,18 +125,45 @@ export default function EditPage() {
   // Function to handle expense updates
   const handleUpdate = async (
     id: string,
+    updatedLocation: string,
+    updatedAddress: string,
+    updatedDay: string,
     updatedDescription: string,
-    updatedAmount: number,
-    updatedCategory: string // Added category to update
+    updatedTotal: number,
+    updatedPayMethod: string,
+    updatedCategory: string,
+    updatedPhone?: string,
+    updatedWebsite?: string,
+    updatedTime?: string,
+    refPath?: string
   ) => {
     try {
-      const expenseRef = doc(db, "expenses", id);
+      let expenseRef;
+      if (userRole === "supervisor" && refPath) {
+        expenseRef = doc(db, refPath);
+      } else if (userRole === "employee" && userId) {
+        expenseRef = doc(db, "users", userId, "receipts", id);
+      } else {
+        throw new Error("No permission or path info.");
+      }
+      const RName: string = `${updatedLocation} ${updatedDay}`;
       await updateDoc(expenseRef, {
+        receiptName: RName,
+        location: updatedLocation,
+        phoneNum: updatedPhone,
+        address: updatedAddress,
+        website: updatedWebsite,
+        day: updatedDay,
+        time: updatedTime,
         description: updatedDescription,
-        amount: updatedAmount,
-        category: updatedCategory, // Updating category
+        total: updatedTotal,
+        payMethod: updatedPayMethod,
+        category: updatedCategory,
+        status: "Pending",
+        comments: "",
       });
       alert("Expense updated successfully.");
+      setPopupOpen(false);
     } catch (err) {
       alert("Error updating expense: " + err);
     }
@@ -118,8 +180,8 @@ export default function EditPage() {
   }, {});
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold mb-4">Edit Expenses</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 dark:bg-black-800 dark:text-white">
+      <h1 className="text-3xl font-bold mb-4">Manage Expenses</h1>
 
       {/* If the user is not authenticated, show a message */}
       {!userId ? (
@@ -135,26 +197,129 @@ export default function EditPage() {
                 {groupedExpenses[category].map((expense) => (
                   <li key={expense.id} className="flex flex-col gap-2">
                     <div>
-                      <strong>{expense.description}</strong>: ${expense.amount}
+                      <strong>{expense.receiptName}</strong>
+                      {userRole === "supervisor" && (
+                        <span className="text-sm text-gray-500 ml-2">
+                          ({expense.userName})
+                        </span>
+                      )}
                     </div>
-
+                    <div>
+                      Total: ${expense.total.toFixed(2)}
+                    </div>
+                    <div>
+                      Subcategory: {expense.subcategory}
+                    </div>
+                    <div>
+                      Description: {expense.description}
+                    </div>
+                    <div>
+                      Status: {expense.status}
+                    </div>
                     {/* Form to edit expense */}
-                    <input
-                      type="text"
-                      defaultValue={expense.description}
-                      className="border p-2 text-black"
-                      onChange={(e) => (expense.description = e.target.value)} // Handle description change
-                    />
-                    <input
-                      type="number"
-                      defaultValue={expense.amount}
-                      className="border p-2 text-black"
-                      onChange={(e) => (expense.amount = parseFloat(e.target.value))} // Handle amount change
-                    />
-                    <select
-                      value={expense.category}
-                      onChange={(e) => (expense.category = e.target.value)} // Handle category change
-                      className="border p-2 text-black"
+
+                    <button
+                      onClick={() => openPopup(expense)}
+                      className="bg-blue-500 text-white p-2 rounded"
+                    >
+                      View Expense
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {popupOpen && currentExpense && (
+                
+                <div
+                  className="fixed inset-0 bg-gray bg-opacity-50 flex items-center justify-center"
+                  onClick={(e) => {
+                  if (e.target === e.currentTarget) setPopupOpen(false);
+                  }}
+                >
+                <div className="bg-gray-900 p-6 rounded shadow-lg w-96 max-h-[80vh] overflow-y-auto">
+                
+
+                {/* Check if current user is owner */}
+                {currentExpense.userId === userId ? (
+                <>
+                  <h2 className="text-white font-bold mb-4">Edit Expense: {currentExpense.receiptName}</h2>
+                  {/* Editable inputs for owner */}
+                  <p className="text-white mb-2"><strong>Location:</strong></p>
+                  <input
+                    type="text"
+                    value={currentExpense.location}
+                    onChange={(e) => setCurrentExpense({ ...currentExpense, location: e.target.value })}
+                    className="w-full mb-2 p-2 border"
+                    placeholder="Location"
+                  />
+
+                  <p className="text-white mb-2"><strong>Phone Number:</strong></p>
+                  <input
+                    type="text"
+                    value={currentExpense.phoneNum}
+                    onChange={(e) => setCurrentExpense({ ...currentExpense, phoneNum: e.target.value })}
+                    className="w-full mb-2 p-2 border"
+                    placeholder="Phone Number (000-000-0000)"
+                  />
+
+                  <p className="text-white mb-2"><strong>Address:</strong></p>
+                  <input
+                    type="text"
+                    value={currentExpense.address}
+                    onChange={(e) => setCurrentExpense({ ...currentExpense, address: e.target.value })}
+                    className="w-full mb-2 p-2 border"
+                    placeholder="Address"
+                  />
+
+                  <p className="text-white mb-2"><strong>Website:</strong></p>
+                  <input
+                    type="text"
+                    value={currentExpense.website}
+                    onChange={(e) => setCurrentExpense({ ...currentExpense, website: e.target.value })}
+                    className="w-full mb-2 p-2 border"
+                    placeholder="Website"
+                  />
+
+                  <p className="text-white mb-2"><strong>Date:</strong></p>
+                  <input
+                    type="text"
+                    value={currentExpense.day}
+                    onChange={(e) => setCurrentExpense({ ...currentExpense, day: e.target.value })}
+                    className="w-full mb-2 p-2 border"
+                    placeholder="MM/DD/YYYY"
+                  />
+
+                  <p className="text-white mb-2"><strong>Time:</strong></p>
+                  <input
+                    type="text"
+                    value={currentExpense.time}
+                    onChange={(e) => setCurrentExpense({ ...currentExpense, time: e.target.value })}
+                    className="w-full mb-2 p-2 border"
+                    placeholder="HH:MM AM/PM"
+                  />
+
+                  <p className="text-white mb-2"><strong>Description:</strong></p>
+                  <input
+                    type="text"
+                    value={currentExpense.description}
+                    onChange={(e) => setCurrentExpense({ ...currentExpense, description: e.target.value })}
+                    className="w-full mb-2 p-2 border"
+                    placeholder="Description"
+                  />
+
+                  <p className="text-white mb-2"><strong>Total:</strong></p>
+                  <input
+                    type="number"
+                    value={currentExpense.total}
+                    onChange={(e) => setCurrentExpense({ ...currentExpense, total: parseFloat(e.target.value)})}
+                    className="w-full mb-6 p-2 border"
+                    placeholder="Amount"
+                  />
+
+                  <p className="text-white mb-2"><strong>Category:</strong></p>
+                  <select
+                      value={currentExpense.category}
+                      onChange={(e) => setCurrentExpense({ ...currentExpense, category: e.target.value })} // Handle category change
+                      className="w-full border p-2 mb-2"
                     >
                       <option value="travel">Travel</option>
                       <option value="meals">Meals</option>
@@ -162,32 +327,86 @@ export default function EditPage() {
                       <option value="entertainment">Entertainment</option>
                       <option value="training">Training</option>
                       <option value="transportation">Transportation</option>
-                    </select>
+                      <option value="others">Others</option>
+                  </select>
+
+                    <p className="text-white mb-2"><strong>Status:</strong> {currentExpense.status}</p>
+                    <p className="text-white mb-2"><strong>Supervisor Comment:</strong></p>
+                    <p className="text-white mb-2">{currentExpense.comments}</p>
 
                     <button
                       onClick={() =>
                         handleUpdate(
-                          expense.id,
-                          expense.description,
-                          expense.amount,
-                          expense.category
+                          currentExpense.id,
+                          currentExpense.location,
+                          currentExpense.address,
+                          currentExpense.day,
+                          currentExpense.description,
+                          currentExpense.total,
+                          currentExpense.payMethod,
+                          currentExpense.category,
+                          currentExpense.phoneNum,
+                          currentExpense.website,
+                          currentExpense.time,
+                          currentExpense.refPath
                         )
                       }
-                      className="bg-blue-500 text-white p-2 rounded"
+                      className="bg-blue-500 text-white mr-2 p-2 rounded"
                     >
                       Update Expense
                     </button>
 
                     {/* Delete Button */}
                     <button
-                      onClick={() => handleDelete(expense.id)}
-                      className="bg-red-500 text-white p-2 rounded"
+                      onClick={() => handleDelete(currentExpense.id, currentExpense.refPath)}
+                      className="bg-red-500 text-white mr-2 p-2 rounded"
                     >
                       Delete Expense
                     </button>
-                  </li>
-                ))}
-              </ul>
+                  {/* <button
+                    onClick={handleUpdate}
+                    className="bg-green-500 text-white px-4 py-2 rounded mr-2"
+                  >
+                  Update
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="bg-red-500 text-white px-4 py-2 rounded"
+                  >
+                  Delete
+                  </button> */}
+                </>
+                ) : (
+                <>
+                  <h2 className="text-white font-bold mb-4">View Expense: {currentExpense.receiptName}</h2>
+                  {/* Read-only view for Supervisors */}
+                  <p className="text-white mb-6"><strong>Owner:</strong> {currentExpense.userName}</p>
+                  <p className="text-white mb-2"><strong>Location:</strong> {currentExpense.location}</p>
+                  <p className="text-white mb-2"><strong>Phone Number:</strong> {currentExpense.phoneNum}</p>
+                  <p className="text-white mb-2"><strong>Address:</strong> {currentExpense.address}</p>
+                  <p className="text-white mb-2"><strong>Website:</strong> {currentExpense.website}</p>
+                  <p className="text-white mb-2"><strong>Date:</strong> {currentExpense.day}</p>
+                  <p className="text-white mb-2"><strong>Time:</strong> {currentExpense.time}</p>
+                  <p className="text-white mb-2"><strong>Description:</strong> {currentExpense.description}</p>
+                  <p className="text-white mb-2"><strong>Total:</strong> ${currentExpense.total.toFixed(2)}</p>
+                  <p className="text-white mb-6"><strong>Pay Method:</strong> {currentExpense.payMethod}</p>
+                  <p className="text-white mb-2"><strong>Category:</strong> {currentExpense.category}</p>
+                  <p className="text-white mb-6"><strong>Subcategory:</strong> {currentExpense.subcategory}</p>
+                  <p className="text-white mb-2"><strong>Status:</strong> {currentExpense.status}</p>
+                  <p className="text-white mb-2"><strong>Supervisor Comment:</strong></p>
+                  <p className="text-white mb-2">{currentExpense.comments}</p>
+                </>
+                )}
+
+                <button
+                onClick={() => setPopupOpen(false)}
+                className="bg-gray-500 text-white p-2 rounded"
+                >
+                Close
+                </button>
+                </div>
+                </div>
+              )}
             </div>
           ))}
         </>
