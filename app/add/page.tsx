@@ -51,9 +51,6 @@ const ExpenseForm = () => {
         if (decoded.description) setDescription(decoded.description);
         if (decoded.category) setCategory(decoded.category);
         if (decoded.subcategory) setSubcategory(decoded.subcategory);
-
-
-        console.log("Decoded data: ", decoded);
   
       } catch (err) {
         console.error("Error decoding data: ", err);
