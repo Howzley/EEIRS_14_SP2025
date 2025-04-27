@@ -25,17 +25,17 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-black text-black dark:text-white">
       <h1 className="text-5xl font-bold mb-12">Login to EERIS</h1>
       {error && <p className="text-red-500 mb-4">{error}</p>}
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-4 w-full max-w-md">
         <div>
           <input
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded w-full text-black dark:text-white dark:bg-gray-700 dark:border-gray-600"
           />
         </div>
         <div>
@@ -44,12 +44,12 @@ const LoginPage = () => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded w-full text-black dark:text-white dark:bg-gray-700 dark:border-gray-600"
           />
         </div>
         <button
           type="submit"
-          className="bg-blue-500 text-white p-2 rounded w-full"
+          className="bg-blue-500 text-white p-2 rounded w-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
         >
           Login
         </button>
@@ -57,9 +57,9 @@ const LoginPage = () => {
 
       {/* Add the link to signup page */}
       <div className="mt-4">
-        <p>Don't have an account?</p>
+        <p className="text-gray-600 dark:text-gray-400">Don't have an account?</p>
         <Link href="/signup">
-          <button className="bg-green-500 text-white p-2 rounded w-full mt-2">
+          <button className="bg-green-500 text-white p-2 rounded w-full mt-2 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-green-600 dark:hover:bg-green-500">
             Go to Signup
           </button>
         </Link>

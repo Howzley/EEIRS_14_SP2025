@@ -60,7 +60,6 @@ const ExpenseForm = () => {
       }
     }
   }, []);
-  
   // Authentication check
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -165,7 +164,7 @@ const ExpenseForm = () => {
             placeholder="*Location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             required
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
@@ -176,7 +175,7 @@ const ExpenseForm = () => {
             placeholder="Phone Number (000-000-0000)"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
         </div>
@@ -186,7 +185,7 @@ const ExpenseForm = () => {
             placeholder="*Address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             required
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
@@ -197,7 +196,7 @@ const ExpenseForm = () => {
             placeholder="Website"
             value={website}
             onChange={(e) => setSite(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
         </div>
@@ -207,7 +206,7 @@ const ExpenseForm = () => {
             placeholder="*Date of Purchase (MM/DD/YYYY)"
             value={DOP}
             onChange={(e) => setDOP(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             required
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
@@ -218,7 +217,7 @@ const ExpenseForm = () => {
             placeholder="Time (HH:MM AM/PM)"
             value={TOP}
             onChange={(e) => setTOP(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
         </div>
@@ -228,7 +227,7 @@ const ExpenseForm = () => {
             placeholder="*Pay Method"
             value={payMethod}
             onChange={(e) => setPayMethod(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             required
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
@@ -245,7 +244,7 @@ const ExpenseForm = () => {
               setShowCustomSub(false); // reset subcategory input if category changes
               setSubcategory("");
             }}
-            className="p-2 border border-gray-300 rounded text-black w-full"
+            className="p-2 border border-gray-300 rounded"
             required
           >
             <option value="">Select Category</option>
@@ -274,7 +273,7 @@ const ExpenseForm = () => {
                     setSubcategory(e.target.value);
                   }
                 }}
-                className="p-2 border border-gray-300 rounded text-black w-full"
+                className="p-2 border border-gray-300 rounded"
                 required
               >
                 <option value="">Select Subcategory</option>
@@ -291,7 +290,7 @@ const ExpenseForm = () => {
                 placeholder="New Subcategory"
                 value={subcategory}
                 onChange={(e) => setSubcategory(e.target.value)}
-                className="p-2 border border-gray-300 rounded text-black"
+                className="p-2 border border-gray-300 rounded"
                 required
               />
             )}
@@ -304,7 +303,7 @@ const ExpenseForm = () => {
                   placeholder="New Subcategory"
                   value={subcategory}
                   onChange={(e) => setSubcategory(e.target.value)}
-                  className="p-2 border border-gray-300 rounded text-black w-full"
+                  className="p-2 border border-gray-300 rounded rounded"
                   required
                 />
               </div>
@@ -317,7 +316,7 @@ const ExpenseForm = () => {
             placeholder="*Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             required
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
@@ -328,7 +327,7 @@ const ExpenseForm = () => {
             placeholder="*Total"
             value={total}
             onChange={(e) => setTotal(e.target.value === "" ? 0 : parseFloat(e.target.value))} // Allow free input
-            className="p-2 border border-gray-300 rounded text-black"
+            className="p-2 border border-gray-300 rounded"
             required
             onKeyDown={handleKeyDown} // Add onKeyDown event to show alert
           />
