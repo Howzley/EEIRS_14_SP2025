@@ -83,7 +83,7 @@ export default function MainPage() {
 
         {/* Receipts Status */}
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          <h2 className="text-xl font-semibold">Receipts Status:</h2>
+          <h2 className="text-xl font-semibold">Status of Receipts:</h2>
           {/* Displaying counts for each receipt status */}
           <p className="text-green-500">Approved: {approvedCount}</p>  {/* Green for approved */}
           <p className="text-yellow-500">Pending: {pendingCount}</p>    {/* Yellow for pending */}
