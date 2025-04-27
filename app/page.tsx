@@ -85,9 +85,9 @@ export default function MainPage() {
         <div className="text-sm text-gray-600 dark:text-gray-400">
           <h2 className="text-xl font-semibold">Receipts Status:</h2>
           {/* Displaying counts for each receipt status */}
-          <p>Approved: {approvedCount}</p>
-          <p>Pending: {pendingCount}</p>
-          <p>Denied: {deniedCount}</p>
+          <p className="text-green-500">Approved: {approvedCount}</p>  {/* Green for approved */}
+          <p className="text-yellow-500">Pending: {pendingCount}</p>    {/* Yellow for pending */}
+          <p className="text-red-500">Denied: {deniedCount}</p>         {/* Red for denied */}
         </div>
 
         {/* Recent Activity */}
@@ -96,7 +96,20 @@ export default function MainPage() {
           <ul>
             {pendingReceipts.map((receipt, index) => (
               <li key={index}>
-                {receipt.receiptName} - {receipt.status}
+                {receipt.receiptName} -   
+                <span
+                  className={
+                    receipt.status === "Approved"
+                      ? "text-green-500"
+                      : receipt.status === "Pending"
+                      ? "text-yellow-500"
+                      : receipt.status === "Denied"
+                      ? "text-red-500"
+                      : "text-gray-500" // Default color if no status matches
+                  }
+                >
+                  {" "}{receipt.status} {/* Added a space before status */}
+                </span>
               </li>
             ))}
           </ul>
