@@ -82,7 +82,10 @@ const ExpenseForm = () => {
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!location || !DOP || !total || !description || !category || !subcategory) {
+    if (
+      !location || !DOP || !total || !description || !category ||
+      (showCustomSub ? !subcategory.trim() : !subcategory)
+    ) {
       setError("Please fill out all required fields.");
       return;
     }
@@ -244,7 +247,7 @@ const ExpenseForm = () => {
               setShowCustomSub(false); // reset subcategory input if category changes
               setSubcategory("");
             }}
-            className="p-2 border border-gray-300 rounded"
+            className="p-2 border border-gray-300 w-full rounded"
             required
           >
             <option value="">Select Category</option>
@@ -260,20 +263,20 @@ const ExpenseForm = () => {
         {category && (
           <div>
             <label htmlFor="subcategory" className="block mb-2">*Subcategory</label>
-            {categoryMap[category]?.length ? (
+            {categoryMap[category]?.length && !showCustomSub ? (
               <select
                 id="subcategory"
                 value={subcategory}
                 onChange={(e) => {
                   if (e.target.value === "__custom__") {
                     setShowCustomSub(true);
-                    setSubcategory("");
+                    setSubcategory(""); // Reset custom subcategory
                   } else {
                     setShowCustomSub(false);
                     setSubcategory(e.target.value);
                   }
                 }}
-                className="p-2 border border-gray-300 rounded"
+                className="p-2 border border-gray-300 w-full rounded"
                 required
               >
                 <option value="">Select Subcategory</option>
@@ -283,30 +286,15 @@ const ExpenseForm = () => {
                 <option value="__custom__">Add new subcategory...</option>
               </select>
             ) : (
-              // If no subcategories, show input
               <input
                 type="text"
                 id="subcategory"
                 placeholder="New Subcategory"
                 value={subcategory}
                 onChange={(e) => setSubcategory(e.target.value)}
-                className="p-2 border border-gray-300 rounded"
+                className="p-2 border border-gray-300 rounded w-full"
                 required
               />
-            )}
-
-            {/* If adding a new subcategory */}
-            {showCustomSub && (
-              <div className="mt-2 w-full">
-                <input
-                  type="text"
-                  placeholder="New Subcategory"
-                  value={subcategory}
-                  onChange={(e) => setSubcategory(e.target.value)}
-                  className="p-2 border border-gray-300 rounded rounded"
-                  required
-                />
-              </div>
             )}
           </div>
         )}
@@ -335,9 +323,10 @@ const ExpenseForm = () => {
         <button
           type="submit"
           className="bg-blue-500 text-white p-2 rounded w-full"
+          disabled={showCustomSub && !subcategory.trim()}
         >
           Add Expense
-        </button>
+        </button> 
       </form>
 
       {/* Back to Main Page */}
