@@ -217,53 +217,7 @@ export default function EditPage() {
                       Status: {expense.status}
                     </div>
                     {/* Form to edit expense */}
-                    {/* <input
-                      type="text"
-                      defaultValue={expense.description}
-                      className="border p-2 dark:bg-gray-700 dark:text-white"
-                      onChange={(e) => (expense.description = e.target.value)} // Handle description change
-                    />
-                    <input
-                      type="number"
-                      defaultValue={expense.total}
-                      className="border p-2 dark:bg-gray-700 dark:text-white"
-                      onChange={(e) => (expense.total = parseFloat(e.target.value))} // Handle amount change
-                    />
-                    <select
-                      value={expense.category}
-                      onChange={(e) => (expense.category = e.target.value)} // Handle category change
-                      className="border p-2 dark:bg-gray-700 dark:text-white"
-                    >
-                      <option value="travel">Travel</option>
-                      <option value="meals">Meals</option>
-                      <option value="office supplies">Office Supplies</option>
-                      <option value="entertainment">Entertainment</option>
-                      <option value="training">Training</option>
-                      <option value="transportation">Transportation</option>
-                    </select>
 
-                    <button
-                      onClick={() =>
-                        handleUpdate(
-                          expense.id,
-                          expense.description,
-                          expense.total,
-                          expense.category,
-                          expense.refPath
-                        )
-                      }
-                      className="bg-blue-500 text-white p-2 rounded"
-                    >
-                      Update Expense
-                    </button>
-
-                    {/* Delete Button *}
-                    <button
-                      onClick={() => handleDelete(expense.id, expense.refPath)}
-                      className="bg-red-500 text-white p-2 rounded"
-                    >
-                      Delete Expense
-                    </button> */}
                     <button
                       onClick={() => openPopup(expense)}
                       className="bg-blue-500 text-white p-2 rounded"
@@ -364,7 +318,7 @@ export default function EditPage() {
                   <p className="text-white mb-2"><strong>Category:</strong></p>
                   <select
                       value={currentExpense.category}
-                      onChange={(e) => (currentExpense.category = e.target.value)} // Handle category change
+                      onChange={(e) => setCurrentExpense({ ...currentExpense, category: e.target.value })} // Handle category change
                       className="w-full border p-2 mb-2"
                     >
                       <option value="travel">Travel</option>
@@ -373,7 +327,8 @@ export default function EditPage() {
                       <option value="entertainment">Entertainment</option>
                       <option value="training">Training</option>
                       <option value="transportation">Transportation</option>
-                    </select>
+                      <option value="others">Others</option>
+                  </select>
 
                     <p className="text-white mb-2"><strong>Status:</strong> {currentExpense.status}</p>
                     <p className="text-white mb-2"><strong>Supervisor Comment:</strong></p>
