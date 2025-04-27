@@ -146,8 +146,9 @@ export default function EditPage() {
       } else {
         throw new Error("No permission or path info.");
       }
-  
+      const RName: string = `${updatedLocation} ${updatedDay}`;
       await updateDoc(expenseRef, {
+        receiptName: RName,
         location: updatedLocation,
         phoneNum: updatedPhone,
         address: updatedAddress,
