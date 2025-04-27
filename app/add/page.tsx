@@ -37,11 +37,22 @@ const ExpenseForm = () => {
     const encodedData = params.get("data");
     if (encodedData) {
       try {
-        const decoded = JSON.parse(atob(decodeURIComponent(encodedData)));      
-      
+        const decoded = JSON.parse(atob(decodeURIComponent(encodedData)));     
+
+        if (decoded.store_name) setLocation(decoded.store_name);
+        if (decoded.store_phone_number) setPhone(decoded.store_phone_number);
+        if (decoded.store_address) setAddress(decoded.store_address);
+        if (decoded.store_website) setSite(decoded.store_website);
+        if (decoded.date_purchase) setDOP(decoded.date_purchase);
+        if (decoded.time_purchase) setTOP(decoded.time_purchase);
+        if (decoded.payment_method) setPayMethod(decoded.payment_method);
+
         if (decoded.total_price) setTotal(decoded.total_price);
-        if (decoded.store_name) setDescription(decoded.store_name);
+        if (decoded.description) setDescription(decoded.description);
         if (decoded.category) setCategory(decoded.category);
+        if (decoded.subcategory) setSubcategory(decoded.subcategory);
+
+
         console.log("Decoded data: ", decoded);
   
       } catch (err) {
@@ -50,9 +61,6 @@ const ExpenseForm = () => {
     }
   }, []);
   
-  
-  
-
   // Authentication check
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

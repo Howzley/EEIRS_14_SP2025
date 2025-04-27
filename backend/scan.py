@@ -1,3 +1,13 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+env_path = Path(__file__).parent.parent / ".env.local"
+load_dotenv(dotenv_path=env_path)
+
+load_dotenv()
+
+
 import cv2
 import pytesseract
 import numpy as np
@@ -7,6 +17,7 @@ import io
 import re
 import json
 from google import genai
+
 
 # =============== OCR Utilities ===============
 
@@ -24,8 +35,9 @@ def extract_text(image: np.ndarray) -> str:
 
 def generate_ai_response(extracted_text: str) -> dict | None:
     """Send extracted text to Gemini and parse structured receipt data."""
-    client = genai.Client(api_key="AIzaSyCAPET-P6B1Kv27DT_iLoA7A_X_lOZBLIk")
-
+    api_key = os.getenv("GEMINI_API_KEY")  # <- read from environment
+    client = genai.Client(api_key=api_key)
+    
     prompt = f'''
     You are an intelligent receipt parser. From the provided receipt text, precisely extract the following information.
     Correct common OCR errors and typos. Completely ignore irrelevant text.
@@ -53,6 +65,8 @@ def generate_ai_response(extracted_text: str) -> dict | None:
         If none are a good fit, use "others".
         Do NOT create new categories. Only select from this list.
         If the category is "groceries", use "meals" instead.
+        Also define a subcategory if possible, starting a capital letter. If not, leave it empty.
+        Give a simple description about the purchase.
 
 
     Return the information as this JSON object:
@@ -61,13 +75,16 @@ def generate_ai_response(extracted_text: str) -> dict | None:
         "store_phone_number": "",
         "store_address": "",
         "store_website": "",
-        "date_time": "",
+        "date_purchase": "",
+        "time_purchase": "",
         "purchased_items": [
             {{"item_name": "", "price": ""}}
         ],
         "total_price": "",
         "payment_method": "",
-        "category": ""
+        "category": "",
+        "subcategory": "",
+        "description": ""
     }}
 
     Receipt Text:

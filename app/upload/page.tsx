@@ -52,7 +52,7 @@ export default function FileUploadPage() {
     const blob = await fetch(file).then(r => r.blob()); // Convert the base64 string to a Blob
     formData.append("file", blob); // Append the file to the FormData object
 
-    const res = await fetch('http://localhost:8000/scan-receipt', {
+    const res = await fetch('http://localhost:8000/scan-receipt/', {
       method: 'POST',
       body: formData,
     })
