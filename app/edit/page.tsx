@@ -280,7 +280,7 @@ export default function EditPage() {
                   if (e.target === e.currentTarget) setPopupOpen(false);
                   }}
                 >
-                <div className="bg-gray-900 p-6 rounded shadow-lg w-96">
+                <div className="bg-gray-900 p-6 rounded shadow-lg w-96 max-h-[80vh] overflow-y-auto">
                 
 
                 {/* Check if current user is owner */}
@@ -373,6 +373,10 @@ export default function EditPage() {
                       <option value="training">Training</option>
                       <option value="transportation">Transportation</option>
                     </select>
+
+                    <p className="text-white mb-2"><strong>Status:</strong> {currentExpense.status}</p>
+                    <p className="text-white mb-2"><strong>Supervisor Comment:</strong></p>
+                    <p className="text-white mb-2">{currentExpense.comments}</p>
 
                     <button
                       onClick={() =>
