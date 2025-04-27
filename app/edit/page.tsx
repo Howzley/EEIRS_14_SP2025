@@ -158,6 +158,8 @@ export default function EditPage() {
         total: updatedTotal,
         payMethod: updatedPayMethod,
         category: updatedCategory,
+        status: "Pending",
+        comments: "",
       });
       alert("Expense updated successfully.");
       setPopupOpen(false);
