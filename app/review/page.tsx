@@ -72,7 +72,7 @@ export default function ReviewPage() {
   }, [userRole]);
 
   const handleReview = async (expenseId: string, newStatus: string) => {
-    const comment = comments[expenseId] || "";
+    const comment = comments[expenseId] || ""; // Get the comment for the current expense
   
     if (newStatus === "Denied" && !comment) {
       alert("You must provide a comment for denied receipts.");
@@ -112,11 +112,23 @@ export default function ReviewPage() {
         return;
       }
   
-      // Proceed with the update
-      await updateDoc(expenseRef, {
+      // Step 3: Update the receipt document
+      const updatedData: any = {
         status: newStatus,
-        comments: newStatus === "Denied" ? comment : null,
-      });
+      };
+  
+      // If the status is denied, include the comment
+      if (newStatus === "Denied" && comment) {
+        updatedData.comments = comment;
+      }
+  
+      // If the status is approved, only update the comment if it's not empty or null
+      if (newStatus === "Approved" && comment.trim() !== "") {
+        updatedData.comments = comment;
+      }
+  
+      // Proceed with the update
+      await updateDoc(expenseRef, updatedData);
   
       alert(`Expense successfully ${newStatus.toLowerCase()}.`);
     } catch (err) {
