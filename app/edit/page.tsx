@@ -280,7 +280,7 @@ export default function EditPage() {
                   if (e.target === e.currentTarget) setPopupOpen(false);
                   }}
                 >
-                <div className="bg-gray-900 p-6 rounded shadow-lg w-96">
+                <div className="bg-gray-900 p-6 rounded shadow-lg w-96 max-h-[80vh] overflow-y-auto">
                 
 
                 {/* Check if current user is owner */}
