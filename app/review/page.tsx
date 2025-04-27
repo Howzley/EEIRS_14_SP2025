@@ -226,6 +226,14 @@ export default function ReviewPage() {
           ))}
         </ul>
       )}
+      <div className="flex items-center justify-center min-h-screen">
+      {/* Back button to navigate to the homepage */}
+      <Link href="/">
+        <button className="bg-gray-500 text-white p-2 rounded mt-4">
+          Back to Home
+        </button>
+      </Link>
+      </div>
     </div>
   );
 }
