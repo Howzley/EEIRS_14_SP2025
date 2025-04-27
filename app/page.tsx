@@ -94,7 +94,7 @@ export default function MainPage() {
         <div className="text-sm text-gray-600 dark:text-gray-400">
           <h2 className="text-xl font-semibold">Recent Activity:</h2>
           <ul>
-            {pendingReceipts.map((receipt, index) => (
+            {pendingReceipts.slice(-5).map((receipt, index) => (
               <li key={index}>
                 {receipt.receiptName} -   
                 <span

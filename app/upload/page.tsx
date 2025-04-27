@@ -68,8 +68,11 @@ export default function FileUploadPage() {
 
   // For when user skips receipt
   const handleSkip = () => {
+    setFile(null); // Clear the file state
+    localStorage.removeItem("receiptImage"); // Clear localStorage if the file was stored
     router.push("/add"); // Navigate to add page without receipt to scan
   };
+  
 
   if (!user) {
     return null; // Optionally, you can show a loading indicator or redirect if the user is not authenticated.

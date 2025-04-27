@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from scan import scan_receipt_from_bytes
+from backend.scan import scan_receipt_from_bytes
 
 app = FastAPI()
 
