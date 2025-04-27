@@ -374,6 +374,10 @@ export default function EditPage() {
                       <option value="transportation">Transportation</option>
                     </select>
 
+                    <p className="text-white mb-2"><strong>Status:</strong> {currentExpense.status}</p>
+                    <p className="text-white mb-2"><strong>Supervisor Comment:</strong></p>
+                    <p className="text-white mb-2">{currentExpense.comments}</p>
+
                     <button
                       onClick={() =>
                         handleUpdate(
