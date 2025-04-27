@@ -80,7 +80,7 @@ def generate_ai_response(extracted_text: str) -> dict | None:
         "purchased_items": [
             {{"item_name": "", "price": ""}}
         ],
-        "total_price": "",
+        "total_price": ,
         "payment_method": "",
         "category": "",
         "subcategory": "",
