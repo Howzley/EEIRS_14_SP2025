@@ -28,6 +28,26 @@ function capitalizeWords(str: string) {
   return str.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function downloadCSV(expenses: Expense[]) {
+    const headers = [
+      "id", "receiptName", "description", "category", "total", "day", "userId"
+    ];
+    const csvRows = [headers.join(",")];
+    expenses.forEach(exp => {
+      const row = headers.map(h => `"${String(exp[h as keyof Expense] ?? "").replace(/"/g, '""')}"`);
+      csvRows.push(row.join(","));
+    });
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "all_approved_receipts.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
 export default function ReportPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categoryTotals, setCategoryTotals] = useState<{ [key: string]: number }>({});
@@ -136,8 +156,14 @@ export default function ReportPage() {
           <TotalExpenses expenses={expenses} />
         </div>
       </div>
+      <button
+      onClick={() => downloadCSV(expenses)}
+      className="bg-green-600 text-white px-4 py-2 rounded mb-0 mt-10"
+      >
+      Download Receipts CSV
+      </button>
       <Link href="/">
-        <button className="bg-gray-500 text-white p-2 rounded mt-4">
+        <button className="bg-gray-500 text-white p-2 rounded">
           Back to Home
         </button>
       </Link>
