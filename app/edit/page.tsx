@@ -218,6 +218,7 @@ export default function EditPage() {
     }
   }
 
+  
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 dark:bg-black-800 dark:text-white">
       <h1 className="text-3xl font-bold mb-4">Manage Expenses</h1>
