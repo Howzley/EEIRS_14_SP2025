@@ -154,7 +154,7 @@ export default function SummaryPage() {
                 .sort((a, b) => (b.total ?? 0) - (a.total ?? 0))  // <-- sort expensive first
                 .map((expense) => (
                   <li key={expense.id} className="flex text-gray-300 justify-between mb-2 p-2 border-b">
-                    <span>{expense.description}</span>
+                    <span>{expense.receiptName}</span>
                     <span>${(expense.total ?? 0).toFixed(2)}</span>
                   </li>
                 ))}
