@@ -205,6 +205,19 @@ export default function EditPage() {
     return groups;
   }, {});
 
+  function getStatusClass(status: string) {
+    switch (status) {
+      case "Approved":
+        return "text-green-500";
+      case "Pending":
+        return "text-yellow-500";
+      case "Denied":
+        return "text-red-500";
+      default:
+        return "";
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 dark:bg-black-800 dark:text-white">
       <h1 className="text-3xl font-bold mb-4">Manage Expenses</h1>
@@ -216,43 +229,109 @@ export default function EditPage() {
         <>
           {/* Displaying Expenses by Category */}
           {Object.keys(groupedExpenses).map((category) => (
-            <div key={category} className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">{category}</h2>
+            // <div key={category} className="mb-8">
+            //   <h2 className="text-2xl font-bold mb-4">{category}</h2>
 
-              <ul className="space-y-4">
-                {groupedExpenses[category].map((expense) => (
-                  <li key={expense.id} className="flex flex-col gap-2">
-                    <div>
-                      <strong>{expense.receiptName}</strong>
-                      {userRole === "supervisor" && (
-                        <span className="text-sm text-gray-500 ml-2">
-                          ({expense.userName})
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      Total: ${expense.total.toFixed(2)}
-                    </div>
-                    <div>
-                      Subcategory: {expense.subcategory}
-                    </div>
-                    <div>
-                      Description: {expense.description}
-                    </div>
-                    <div>
-                      Status: {expense.status}
-                    </div>
-                    {/* Form to edit expense */}
+            //   <ul className="space-y-4">
+            //     {groupedExpenses[category].map((expense) => (
+            //       <li key={expense.id} className="flex flex-col gap-2">
+            //         <div>
+            //           <strong>{expense.receiptName}</strong>
+            //           {userRole === "supervisor" && (
+            //             <span className="text-sm text-gray-500 ml-2">
+            //               ({expense.userName})
+            //             </span>
+            //           )}
+            //         </div>
+            //         <div>
+            //           Total: ${expense.total.toFixed(2)}
+            //         </div>
+            //         <div>
+            //           Subcategory: {expense.subcategory}
+            //         </div>
+            //         <div>
+            //           Description: {expense.description}
+            //         </div>
+            //         <div>
+            //           Status: {expense.status}
+            //         </div>
+            //         {/* Form to edit expense */}
 
-                    <button
-                      onClick={() => openPopup(expense)}
-                      className="bg-blue-500 text-white p-2 rounded"
-                    >
-                      View Expense
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            //         <button
+            //           onClick={() => openPopup(expense)}
+            //           className="bg-blue-500 text-white p-2 rounded"
+            //         >
+            //           View Expense
+            //         </button>
+            //       </li>
+            //     ))}
+            //   </ul>
+          <div key={category} className="mb-12 w-full">
+            <h2 className="text-2xl font-bold mb-4">{category}</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-auto border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100 dark:bg-gray-800">
+                    <th className="border border-gray-300 p-2">Location</th>
+                    <th className="border border-gray-300 p-2">Date</th>
+                    {/* Conditionally render the User column header */}
+                    {userRole === "supervisor" ? (
+                      <th className="border border-gray-300 p-2">User</th>
+                    ) : null}
+                    <th className="border border-gray-300 p-2">Total</th>
+                    <th className="border border-gray-300 p-2">Subcategory</th>
+                    <th className="border border-gray-300 p-2">Description</th>
+                    <th className="border border-gray-300 p-2">Status</th>
+                    <th className="border border-gray-300 p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupedExpenses[category].map((expense) => (
+                    <tr key={expense.id} className="text-center">
+                      <td className="border border-gray-300 p-2 font-semibold">
+                        {expense.location}
+                      </td>
+                      <td className="border border-gray-300 p-2 font-semibold">
+                        {expense.day}
+                      </td>
+                      {/* Conditionally render the User column data */}
+                      {userRole === "supervisor" ? (
+                        <td className="border border-gray-300 p-2">
+                          <strong
+                            className={expense.userId === userId ? "text-yellow-500" : ""}
+                          >
+                            {expense.userName}
+                          </strong>
+                        </td>
+                      ) : null}
+                      <td className="border border-gray-300 p-2">
+                        ${expense.total.toFixed(2)}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {expense.subcategory}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {expense.description}
+                      </td>
+                      <td className={`border border-gray-300 p-2 font-semibold ${getStatusClass(expense.status)}`}>
+                        {expense.status}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        <button
+                          onClick={() => openPopup(expense)}
+                          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                        >
+                          View
+                        </button>
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+           
+        
+      
               {popupOpen && currentExpense && (
                 
                 <div
@@ -261,7 +340,7 @@ export default function EditPage() {
                   if (e.target === e.currentTarget) setPopupOpen(false);
                   }}
                 >
-                <div className="bg-gray-900 p-6 rounded shadow-lg w-96 max-h-[80vh] overflow-y-auto">
+                <div className="bg-gray-800 p-6 rounded shadow-lg w-96 max-h-[80vh] overflow-y-auto border border-gray-300">
                 
 
                 {/* Check if current user is owner */}
@@ -368,7 +447,7 @@ export default function EditPage() {
                     </div>
                     
                     <div>
-                      <label htmlFor="subcategory" className="block mb-2">*Subcategory</label>
+                      <label htmlFor="subcategory" className="block mb-2">Subcategory</label>
                       {categoryMap[currentExpense.category]?.length && !showCustomSub ? (
                         <select
                           id="subcategory"
@@ -465,7 +544,7 @@ export default function EditPage() {
 
                 <button
                 onClick={() => setPopupOpen(false)}
-                className="bg-gray-500 text-white p-2 rounded"
+                  className="bg-gray-500 text-white p-2 rounded"
                 >
                 Close
                 </button>
