@@ -272,31 +272,31 @@ export default function EditPage() {
               <table className="min-w-full table-auto border-collapse border border-gray-300">
                 <thead>
                   <tr className="bg-gray-100 dark:bg-gray-800">
-                    <th className="border border-gray-300 p-2">Location</th>
-                    <th className="border border-gray-300 p-2">Date</th>
+                    <th className="border border-gray-300 p-2 w-32">Location</th>
+                    <th className="border border-gray-300 p-2 w-32">Date</th>
                     {/* Conditionally render the User column header */}
                     {userRole === "supervisor" ? (
-                      <th className="border border-gray-300 p-2">User</th>
+                      <th className="border border-gray-300 p-2 w-32">User</th>
                     ) : null}
-                    <th className="border border-gray-300 p-2">Total</th>
-                    <th className="border border-gray-300 p-2">Subcategory</th>
-                    <th className="border border-gray-300 p-2">Description</th>
-                    <th className="border border-gray-300 p-2">Status</th>
-                    <th className="border border-gray-300 p-2">Actions</th>
+                    <th className="border border-gray-300 p-2 w-32">Total</th>
+                    <th className="border border-gray-300 p-2 w-32">Subcategory</th>
+                    <th className="border border-gray-300 p-2 w-32">Description</th>
+                    <th className="border border-gray-300 p-2 w-32">Status</th>
+                    <th className="border border-gray-300 p-2 w-16">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {groupedExpenses[category].map((expense) => (
                     <tr key={expense.id} className="text-center">
-                      <td className="border border-gray-300 p-2 font-semibold">
+                      <td className="border border-gray-300 p-2 w-16 font-semibold">
                         {expense.location}
                       </td>
-                      <td className="border border-gray-300 p-2 font-semibold">
+                      <td className="border border-gray-300 p-2 w-16 font-semibold">
                         {expense.day}
                       </td>
                       {/* Conditionally render the User column data */}
                       {userRole === "supervisor" ? (
-                        <td className="border border-gray-300 p-2">
+                        <td className="border border-gray-300 p-2 w-16">
                           <strong
                             className={expense.userId === userId ? "text-yellow-500" : ""}
                           >
@@ -304,19 +304,19 @@ export default function EditPage() {
                           </strong>
                         </td>
                       ) : null}
-                      <td className="border border-gray-300 p-2">
+                      <td className="border border-gray-300 p-2 w-16">
                         ${expense.total.toFixed(2)}
                       </td>
-                      <td className="border border-gray-300 p-2">
+                      <td className="border border-gray-300 p-2 w-16">
                         {expense.subcategory}
                       </td>
-                      <td className="border border-gray-300 p-2">
+                      <td className="border border-gray-300 p-2 w-16">
                         {expense.description}
                       </td>
-                      <td className={`border border-gray-300 p-2 font-semibold ${getStatusClass(expense.status)}`}>
+                      <td className={`border border-gray-300 p-2 w-16 font-semibold ${getStatusClass(expense.status)}`}>
                         {expense.status}
                       </td>
-                      <td className="border border-gray-300 p-2">
+                      <td className="border border-gray-300 p-2 w-16">
                         <button
                           onClick={() => openPopup(expense)}
                           className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
