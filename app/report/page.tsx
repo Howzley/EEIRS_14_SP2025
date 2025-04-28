@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collectionGroup, onSnapshot, query, where } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { collection, getDocs, collectionGroup, onSnapshot, query, where } from "firebase/firestore";
+
 
 const CategoryPieChart = dynamic(() => import("../components/CategoryPieChart"), { ssr: false });
 const YearlyExpenseBar = dynamic(() => import("../components/YearlyExpensesBar"), { ssr: false });
@@ -28,20 +29,75 @@ function capitalizeWords(str: string) {
   return str.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function downloadCSV(expenses: Expense[]) {
-    const headers = [
-      "id", "receiptName", "description", "category", "total", "day", "userId"
-    ];
-    const csvRows = [headers.join(",")];
-    expenses.forEach(exp => {
-      const row = headers.map(h => `"${String(exp[h as keyof Expense] ?? "").replace(/"/g, '""')}"`);
-      csvRows.push(row.join(","));
+function downloadCSV(expenses: any[], users: { [uid: string]: { Fname: string, Lname: string, role?: string } }) {
+    const userMap: {
+      [uid: string]: {
+        userId: string;
+        Fname?: string;
+        Lname?: string;
+        role?: string;
+        totalReceipts: number;
+        total: number;
+        [category: string]: any;
+      };
+    } = {};
+  
+    const categoriesSet = new Set<string>();
+    expenses.forEach((exp) => {
+      if (exp.category) categoriesSet.add(exp.category);
+  
+      if (!userMap[exp.userId]) {
+        const userInfo = users[exp.userId] || {};
+        userMap[exp.userId] = {
+          userId: exp.userId,
+          Fname: userInfo.Fname || "",
+          Lname: userInfo.Lname || "",
+          role: userInfo.role || "",
+          totalReceipts: 0,
+          total: 0,
+        };
+      }
+      userMap[exp.userId].totalReceipts += 1;
+      userMap[exp.userId].total += exp.total ?? 0;
+      if (exp.category) {
+        userMap[exp.userId][exp.category] =
+          (userMap[exp.userId][exp.category] ?? 0) + (exp.total ?? 0);
+      }
     });
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+  
+    const categories = Array.from(categoriesSet);
+    const header = [
+      "userId",
+      "Fname",
+      "Lname",
+      "totalReceipts",
+      "total",
+      ...categories,
+      "role",
+    ];
+  
+    const rows = [header.join(",")];
+    Object.values(userMap).forEach((user) => {
+      const row = [
+        user.userId,
+        user.Fname,
+        user.Lname,
+        user.totalReceipts,
+        user.total.toFixed(2),
+        ...categories.map((cat) =>
+          user[cat] ? Number(user[cat]).toFixed(2) : "0.00"
+        ),
+        user.role || "",
+      ];
+      rows.push(row.join(","));
+    });
+  
+    const csvContent = rows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "all_approved_receipts.csv";
+    a.download = "receipts_report.csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -55,6 +111,8 @@ export default function ReportPage() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
   const [chartData, setChartData] = useState<{category: string, total: number}[]>([]);
+  const [users, setUsers] = useState<{ [uid: string]: { Fname: string, Lname: string, role?: string } }>({});
+
 
   useEffect(() => {
     // Require login to access
@@ -68,6 +126,25 @@ export default function ReportPage() {
     });
     return () => unsubscribeAuth();
   }, [router]);
+
+  useEffect(() => {
+    // Fetch all users and save to state
+    async function fetchUsers() {
+      const usersRef = collection(db, "users");
+      const snapshot = await getDocs(usersRef);
+      const usersData: { [uid: string]: { Fname: string, Lname: string, role?: string } } = {};
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        usersData[doc.id] = {
+          Fname: data.Fname || "",
+          Lname: data.Lname || "",
+          role: data.role || "",
+        };
+      });
+      setUsers(usersData);
+    }
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     // Fetch all receipts with status Approved
@@ -157,8 +234,8 @@ export default function ReportPage() {
         </div>
       </div>
       <button
-      onClick={() => downloadCSV(expenses)}
-      className="bg-green-600 text-white px-4 py-2 rounded mb-0 mt-10"
+      onClick={() => downloadCSV(expenses, users)}
+      className="bg-green-600 text-white px-4 py-2 rounded mb-6"
       >
       Download Receipts CSV
       </button>
