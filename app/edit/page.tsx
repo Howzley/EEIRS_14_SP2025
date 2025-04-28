@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore"; // Import Firestore functions
 import Link from "next/link"; // Import Next.js Link for navigation
 import { Slabo_13px } from "next/font/google"; // Import a Google font (not used in this snippet)
+import { updateCurrentUser } from "firebase/auth";
 
 // Define the Expense type to ensure type safety in TypeScript
 interface Expense {
@@ -28,7 +29,7 @@ interface Expense {
   phoneNum?: string;
   receiptName: string;
   status: string;
-  subcategory?: string;
+  subcategory: string;
   time?: string;
   userId: string;
   userName?: string;
@@ -48,6 +49,10 @@ export default function EditPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [currentExpense, setCurrentExpense] = useState<Expense | null>(null);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [categoryMap, setCategoryMap] = useState<{
+    [category: string]: string[];
+  }>({});
+  const [showCustomSub, setShowCustomSub] = useState<boolean>(false);
 
   // Fetch the logged-in user's role when the component mounts
   useEffect(() => {
@@ -60,6 +65,7 @@ export default function EditPage() {
 
         if (userSnap.exists()) {
           setUserRole(userSnap.data().role); // Set user role from Firestore data
+          setCategoryMap(userSnap.data().categoryMap || {});
         }
       }
     };
@@ -132,6 +138,7 @@ export default function EditPage() {
     updatedTotal: number,
     updatedPayMethod: string,
     updatedCategory: string,
+    updatedSubcategory: string,
     updatedPhone?: string,
     updatedWebsite?: string,
     updatedTime?: string,
@@ -159,10 +166,29 @@ export default function EditPage() {
         total: updatedTotal,
         payMethod: updatedPayMethod,
         category: updatedCategory,
+        subcategory: updatedSubcategory,
         status: "Pending",
         comments: "",
       });
+      // Now update the user's categoryMap if necessary
+      if (userId){
+        if (
+          !categoryMap[updatedCategory] ||
+          !categoryMap[updatedCategory].includes(updatedSubcategory)
+        ) {
+          const updatedMap = { ...categoryMap };
+          if (!updatedMap[updatedCategory]) {
+            updatedMap[updatedCategory] = [];
+          }
+          updatedMap[updatedCategory].push(updatedSubcategory);
+          await updateDoc(doc(db, "users", userId), {
+            categoryMap: updatedMap,
+          });
+          setCategoryMap(updatedMap);
+        }
+      }
       alert("Expense updated successfully.");
+      setShowCustomSub(false);
       setPopupOpen(false);
     } catch (err) {
       alert("Error updating expense: " + err);
@@ -230,7 +256,7 @@ export default function EditPage() {
               {popupOpen && currentExpense && (
                 
                 <div
-                  className="fixed inset-0 bg-gray bg-opacity-50 flex items-center justify-center"
+                  className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center"
                   onClick={(e) => {
                   if (e.target === e.currentTarget) setPopupOpen(false);
                   }}
@@ -315,20 +341,70 @@ export default function EditPage() {
                     placeholder="Amount"
                   />
 
-                  <p className="text-white mb-2"><strong>Category:</strong></p>
-                  <select
-                      value={currentExpense.category}
-                      onChange={(e) => setCurrentExpense({ ...currentExpense, category: e.target.value })} // Handle category change
-                      className="w-full border p-2 mb-2"
-                    >
-                      <option value="travel">Travel</option>
-                      <option value="meals">Meals</option>
-                      <option value="office supplies">Office Supplies</option>
-                      <option value="entertainment">Entertainment</option>
-                      <option value="training">Training</option>
-                      <option value="transportation">Transportation</option>
-                      <option value="others">Others</option>
-                  </select>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label htmlFor="category" className="block mb-2">
+                        Category
+                      </label>
+                      <select
+                        id="category"
+                        value={currentExpense.category}
+                        onChange={(e) => {
+                          setCurrentExpense({ ...currentExpense, category: e.target.value, subcategory: "" });
+                          setShowCustomSub(false);
+                        }}
+                        className="p-2 border border-gray-300 w-full rounded"
+                        
+                      >
+                        <option value="">Select Category</option>
+                        <option value="travel">Travel</option>
+                        <option value="meals">Meals</option>
+                        <option value="office supplies">Office Supplies</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="training">Training</option>
+                        <option value="transportation">Transportation</option>
+                        <option value="others">Others</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="subcategory" className="block mb-2">*Subcategory</label>
+                      {categoryMap[currentExpense.category]?.length && !showCustomSub ? (
+                        <select
+                          id="subcategory"
+                          value={currentExpense.subcategory}
+                          onChange={(e) => {
+                            if (e.target.value === "__custom__") {
+                              setShowCustomSub(true);
+                              setCurrentExpense({ ...currentExpense, subcategory: "" }); // Reset custom subcategory
+                            } else {
+                              setShowCustomSub(false);
+                              setCurrentExpense({ ...currentExpense, subcategory:e.target.value});
+                            }
+                          }}
+                          className="p-2 border border-gray-300 w-full rounded"
+                            
+                        >
+                          <option value="">Select Subcategory</option>
+                          {categoryMap[currentExpense.category].map((sub) => (
+                            <option key={sub} value={sub}>{sub}</option>
+                          ))}
+                          <option value="__custom__">Add new subcategory...</option>
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          id="subcategory"
+                          placeholder="New Subcategory"
+                          value={currentExpense.subcategory}
+                          onChange={(e) => setCurrentExpense({ ...currentExpense, subcategory:e.target.value})}
+                          className="p-2 border border-gray-300 rounded w-full"
+                            
+                        />
+                      )}
+                    </div>
+                    
+                  </div>
 
                     <p className="text-white mb-2"><strong>Status:</strong> {currentExpense.status}</p>
                     <p className="text-white mb-2"><strong>Supervisor Comment:</strong></p>
@@ -345,6 +421,7 @@ export default function EditPage() {
                           currentExpense.total,
                           currentExpense.payMethod,
                           currentExpense.category,
+                          currentExpense.subcategory,
                           currentExpense.phoneNum,
                           currentExpense.website,
                           currentExpense.time,
@@ -363,18 +440,6 @@ export default function EditPage() {
                     >
                       Delete Expense
                     </button>
-                  {/* <button
-                    onClick={handleUpdate}
-                    className="bg-green-500 text-white px-4 py-2 rounded mr-2"
-                  >
-                  Update
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="bg-red-500 text-white px-4 py-2 rounded"
-                  >
-                  Delete
-                  </button> */}
                 </>
                 ) : (
                 <>
