@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore"; // Import Firestore functions
 import Link from "next/link"; // Import Next.js Link for navigation
 import { Slabo_13px } from "next/font/google"; // Import a Google font (not used in this snippet)
+import { updateCurrentUser } from "firebase/auth";
 
 // Define the Expense type to ensure type safety in TypeScript
 interface Expense {
@@ -28,7 +29,7 @@ interface Expense {
   phoneNum?: string;
   receiptName: string;
   status: string;
-  subcategory?: string;
+  subcategory: string;
   time?: string;
   userId: string;
   userName?: string;
@@ -48,6 +49,10 @@ export default function EditPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [currentExpense, setCurrentExpense] = useState<Expense | null>(null);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [categoryMap, setCategoryMap] = useState<{
+    [category: string]: string[];
+  }>({});
+  const [showCustomSub, setShowCustomSub] = useState<boolean>(false);
 
   // Fetch the logged-in user's role when the component mounts
   useEffect(() => {
@@ -60,6 +65,7 @@ export default function EditPage() {
 
         if (userSnap.exists()) {
           setUserRole(userSnap.data().role); // Set user role from Firestore data
+          setCategoryMap(userSnap.data().categoryMap || {});
         }
       }
     };
@@ -132,6 +138,7 @@ export default function EditPage() {
     updatedTotal: number,
     updatedPayMethod: string,
     updatedCategory: string,
+    updatedSubcategory: string,
     updatedPhone?: string,
     updatedWebsite?: string,
     updatedTime?: string,
@@ -159,10 +166,29 @@ export default function EditPage() {
         total: updatedTotal,
         payMethod: updatedPayMethod,
         category: updatedCategory,
+        subcategory: updatedSubcategory,
         status: "Pending",
         comments: "",
       });
+      // Now update the user's categoryMap if necessary
+      if (userId){
+        if (
+          !categoryMap[updatedCategory] ||
+          !categoryMap[updatedCategory].includes(updatedSubcategory)
+        ) {
+          const updatedMap = { ...categoryMap };
+          if (!updatedMap[updatedCategory]) {
+            updatedMap[updatedCategory] = [];
+          }
+          updatedMap[updatedCategory].push(updatedSubcategory);
+          await updateDoc(doc(db, "users", userId), {
+            categoryMap: updatedMap,
+          });
+          setCategoryMap(updatedMap);
+        }
+      }
       alert("Expense updated successfully.");
+      setShowCustomSub(false);
       setPopupOpen(false);
     } catch (err) {
       alert("Error updating expense: " + err);
@@ -179,6 +205,19 @@ export default function EditPage() {
     return groups;
   }, {});
 
+  function getStatusClass(status: string) {
+    switch (status) {
+      case "Approved":
+        return "text-green-500";
+      case "Pending":
+        return "text-yellow-500";
+      case "Denied":
+        return "text-red-500";
+      default:
+        return "";
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 dark:bg-black-800 dark:text-white">
       <h1 className="text-3xl font-bold mb-4">Manage Expenses</h1>
@@ -190,98 +229,118 @@ export default function EditPage() {
         <>
           {/* Displaying Expenses by Category */}
           {Object.keys(groupedExpenses).map((category) => (
-            <div key={category} className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">{category}</h2>
+            // <div key={category} className="mb-8">
+            //   <h2 className="text-2xl font-bold mb-4">{category}</h2>
 
-              <ul className="space-y-4">
-                {groupedExpenses[category].map((expense) => (
-                  <li key={expense.id} className="flex flex-col gap-2">
-                    <div>
-                      <strong>{expense.receiptName}</strong>
-                      {userRole === "supervisor" && (
-                        <span className="text-sm text-gray-500 ml-2">
-                          ({expense.userName})
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      Total: ${expense.total.toFixed(2)}
-                    </div>
-                    <div>
-                      Subcategory: {expense.subcategory}
-                    </div>
-                    <div>
-                      Description: {expense.description}
-                    </div>
-                    <div>
-                      Status: {expense.status}
-                    </div>
-                    {/* Form to edit expense */}
-                    {/* <input
-                      type="text"
-                      defaultValue={expense.description}
-                      className="border p-2 dark:bg-gray-700 dark:text-white"
-                      onChange={(e) => (expense.description = e.target.value)} // Handle description change
-                    />
-                    <input
-                      type="number"
-                      defaultValue={expense.total}
-                      className="border p-2 dark:bg-gray-700 dark:text-white"
-                      onChange={(e) => (expense.total = parseFloat(e.target.value))} // Handle amount change
-                    />
-                    <select
-                      value={expense.category}
-                      onChange={(e) => (expense.category = e.target.value)} // Handle category change
-                      className="border p-2 dark:bg-gray-700 dark:text-white"
-                    >
-                      <option value="travel">Travel</option>
-                      <option value="meals">Meals</option>
-                      <option value="office supplies">Office Supplies</option>
-                      <option value="entertainment">Entertainment</option>
-                      <option value="training">Training</option>
-                      <option value="transportation">Transportation</option>
-                    </select>
+            //   <ul className="space-y-4">
+            //     {groupedExpenses[category].map((expense) => (
+            //       <li key={expense.id} className="flex flex-col gap-2">
+            //         <div>
+            //           <strong>{expense.receiptName}</strong>
+            //           {userRole === "supervisor" && (
+            //             <span className="text-sm text-gray-500 ml-2">
+            //               ({expense.userName})
+            //             </span>
+            //           )}
+            //         </div>
+            //         <div>
+            //           Total: ${expense.total.toFixed(2)}
+            //         </div>
+            //         <div>
+            //           Subcategory: {expense.subcategory}
+            //         </div>
+            //         <div>
+            //           Description: {expense.description}
+            //         </div>
+            //         <div>
+            //           Status: {expense.status}
+            //         </div>
+            //         {/* Form to edit expense */}
 
-                    <button
-                      onClick={() =>
-                        handleUpdate(
-                          expense.id,
-                          expense.description,
-                          expense.total,
-                          expense.category,
-                          expense.refPath
-                        )
-                      }
-                      className="bg-blue-500 text-white p-2 rounded"
-                    >
-                      Update Expense
-                    </button>
-
-                    {/* Delete Button *}
-                    <button
-                      onClick={() => handleDelete(expense.id, expense.refPath)}
-                      className="bg-red-500 text-white p-2 rounded"
-                    >
-                      Delete Expense
-                    </button> */}
-                    <button
-                      onClick={() => openPopup(expense)}
-                      className="bg-blue-500 text-white p-2 rounded"
-                    >
-                      View Expense
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            //         <button
+            //           onClick={() => openPopup(expense)}
+            //           className="bg-blue-500 text-white p-2 rounded"
+            //         >
+            //           View Expense
+            //         </button>
+            //       </li>
+            //     ))}
+            //   </ul>
+          <div key={category} className="mb-12 w-full">
+            <h2 className="text-2xl font-bold mb-4">{category}</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-auto border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100 dark:bg-gray-800">
+                    <th className="border border-gray-300 p-2 w-32">Location</th>
+                    <th className="border border-gray-300 p-2 w-32">Date</th>
+                    {/* Conditionally render the User column header */}
+                    {userRole === "supervisor" ? (
+                      <th className="border border-gray-300 p-2 w-32">User</th>
+                    ) : null}
+                    <th className="border border-gray-300 p-2 w-32">Total</th>
+                    <th className="border border-gray-300 p-2 w-32">Subcategory</th>
+                    <th className="border border-gray-300 p-2 w-32">Description</th>
+                    <th className="border border-gray-300 p-2 w-32">Status</th>
+                    <th className="border border-gray-300 p-2 w-16">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupedExpenses[category].map((expense) => (
+                    <tr key={expense.id} className="text-center">
+                      <td className="border border-gray-300 p-2 w-16 font-semibold">
+                        {expense.location}
+                      </td>
+                      <td className="border border-gray-300 p-2 w-16 font-semibold">
+                        {expense.day}
+                      </td>
+                      {/* Conditionally render the User column data */}
+                      {userRole === "supervisor" ? (
+                        <td className="border border-gray-300 p-2 w-16">
+                          <strong
+                            className={expense.userId === userId ? "text-yellow-500" : ""}
+                          >
+                            {expense.userName}
+                          </strong>
+                        </td>
+                      ) : null}
+                      <td className="border border-gray-300 p-2 w-16">
+                        ${expense.total.toFixed(2)}
+                      </td>
+                      <td className="border border-gray-300 p-2 w-16">
+                        {expense.subcategory}
+                      </td>
+                      <td className="border border-gray-300 p-2 w-16">
+                        {expense.description}
+                      </td>
+                      <td className={`border border-gray-300 p-2 w-16 font-semibold ${getStatusClass(expense.status)}`}>
+                        {expense.status}
+                      </td>
+                      <td className="border border-gray-300 p-2 w-16">
+                        <button
+                          onClick={() => openPopup(expense)}
+                          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                        >
+                          View
+                        </button>
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+           
+        
+      
               {popupOpen && currentExpense && (
                 
                 <div
-                  className="fixed inset-0 bg-gray bg-opacity-50 flex items-center justify-center"
+                  className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center"
                   onClick={(e) => {
                   if (e.target === e.currentTarget) setPopupOpen(false);
                   }}
                 >
-                <div className="bg-gray-900 p-6 rounded shadow-lg w-96 max-h-[80vh] overflow-y-auto">
+                <div className="bg-gray-800 p-6 rounded shadow-lg w-96 max-h-[80vh] overflow-y-auto border border-gray-300">
                 
 
                 {/* Check if current user is owner */}
@@ -361,19 +420,70 @@ export default function EditPage() {
                     placeholder="Amount"
                   />
 
-                  <p className="text-white mb-2"><strong>Category:</strong></p>
-                  <select
-                      value={currentExpense.category}
-                      onChange={(e) => (currentExpense.category = e.target.value)} // Handle category change
-                      className="w-full border p-2 mb-2"
-                    >
-                      <option value="travel">Travel</option>
-                      <option value="meals">Meals</option>
-                      <option value="office supplies">Office Supplies</option>
-                      <option value="entertainment">Entertainment</option>
-                      <option value="training">Training</option>
-                      <option value="transportation">Transportation</option>
-                    </select>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label htmlFor="category" className="block mb-2">
+                        Category
+                      </label>
+                      <select
+                        id="category"
+                        value={currentExpense.category}
+                        onChange={(e) => {
+                          setCurrentExpense({ ...currentExpense, category: e.target.value, subcategory: "" });
+                          setShowCustomSub(false);
+                        }}
+                        className="p-2 border border-gray-300 w-full rounded"
+                        
+                      >
+                        <option value="">Select Category</option>
+                        <option value="travel">Travel</option>
+                        <option value="meals">Meals</option>
+                        <option value="office supplies">Office Supplies</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="training">Training</option>
+                        <option value="transportation">Transportation</option>
+                        <option value="others">Others</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="subcategory" className="block mb-2">Subcategory</label>
+                      {categoryMap[currentExpense.category]?.length && !showCustomSub ? (
+                        <select
+                          id="subcategory"
+                          value={currentExpense.subcategory}
+                          onChange={(e) => {
+                            if (e.target.value === "__custom__") {
+                              setShowCustomSub(true);
+                              setCurrentExpense({ ...currentExpense, subcategory: "" }); // Reset custom subcategory
+                            } else {
+                              setShowCustomSub(false);
+                              setCurrentExpense({ ...currentExpense, subcategory:e.target.value});
+                            }
+                          }}
+                          className="p-2 border border-gray-300 w-full rounded"
+                            
+                        >
+                          <option value="">Select Subcategory</option>
+                          {categoryMap[currentExpense.category].map((sub) => (
+                            <option key={sub} value={sub}>{sub}</option>
+                          ))}
+                          <option value="__custom__">Add new subcategory...</option>
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          id="subcategory"
+                          placeholder="New Subcategory"
+                          value={currentExpense.subcategory}
+                          onChange={(e) => setCurrentExpense({ ...currentExpense, subcategory:e.target.value})}
+                          className="p-2 border border-gray-300 rounded w-full"
+                            
+                        />
+                      )}
+                    </div>
+                    
+                  </div>
 
                     <p className="text-white mb-2"><strong>Status:</strong> {currentExpense.status}</p>
                     <p className="text-white mb-2"><strong>Supervisor Comment:</strong></p>
@@ -390,6 +500,7 @@ export default function EditPage() {
                           currentExpense.total,
                           currentExpense.payMethod,
                           currentExpense.category,
+                          currentExpense.subcategory,
                           currentExpense.phoneNum,
                           currentExpense.website,
                           currentExpense.time,
@@ -408,18 +519,6 @@ export default function EditPage() {
                     >
                       Delete Expense
                     </button>
-                  {/* <button
-                    onClick={handleUpdate}
-                    className="bg-green-500 text-white px-4 py-2 rounded mr-2"
-                  >
-                  Update
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="bg-red-500 text-white px-4 py-2 rounded"
-                  >
-                  Delete
-                  </button> */}
                 </>
                 ) : (
                 <>
@@ -445,7 +544,7 @@ export default function EditPage() {
 
                 <button
                 onClick={() => setPopupOpen(false)}
-                className="bg-gray-500 text-white p-2 rounded"
+                  className="bg-gray-500 text-white p-2 rounded"
                 >
                 Close
                 </button>

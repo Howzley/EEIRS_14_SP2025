@@ -1,38 +1,37 @@
-"use client"; // This makes sure the file is a client-side component
+"use client";
 
 import { useState, useEffect } from "react";
-import { db, auth } from "../firebase"; // Import Firebase database and authentication instance
-import { collection, collectionGroup, query, where, onSnapshot, updateDoc, doc, getDoc, getDocs } from "firebase/firestore"; // Firestore functions
-import Link from "next/link"; // Import Link for navigation
+import { db, auth } from "../firebase";
+import { collectionGroup, query, where, onSnapshot, updateDoc, doc, getDoc } from "firebase/firestore";
+import Link from "next/link";
 
-// Define the Expense type to ensure type safety in TypeScript
 interface Expense {
   id: string;
   description: string;
   total: number;
   category: string;
   subcategory: string;
-  timestamp: any; // Timestamp
-  refPath: string; // Firestore document path reference
-  status: string; // Pending, Approved, Denied
-  receiptUID: string; // The user ID associated with this receipt (submitted by)
-  userName: string; // User name directly from the receipt
-  comments?: string; // Optional comments for denied receipts
+  timestamp: any;
+  refPath: string;
+  status: string;
+  receiptUID: string;
+  userName: string;
+  comments?: string;
+  [key: string]: any; // Allow extra fields dynamically
 }
 
 export default function ReviewPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [loggedUID, setLoggedUID] = useState<string | null>(null); // Logged-in user's UID
-  const [comments, setComments] = useState<{ [id: string]: string }>({}); // Comment state for each expense
-  const [expandedExpense, setExpandedExpense] = useState<string | null>(null); // State to manage expanded expenses
+  const [loggedUID, setLoggedUID] = useState<string | null>(null);
+  const [comments, setComments] = useState<{ [id: string]: string }>({});
+  const [expandedExpense, setExpandedExpense] = useState<string | null>(null);
 
-  // Fetch user role and logged-in user UID
   useEffect(() => {
     const fetchUserRole = async () => {
       const currentUser = auth.currentUser;
       if (currentUser) {
-        setLoggedUID(currentUser.uid); // Store the logged-in user's UID
+        setLoggedUID(currentUser.uid);
         const userRef = doc(db, "users", currentUser.uid);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
@@ -43,7 +42,6 @@ export default function ReviewPage() {
     fetchUserRole();
   }, []);
 
-  // Fetch pending expenses for supervisor
   useEffect(() => {
     if (userRole === "supervisor") {
       const q = query(collectionGroup(db, "receipts"), where("status", "==", "Pending"));
@@ -59,86 +57,77 @@ export default function ReviewPage() {
             timestamp: expenseData.timestamp,
             refPath: doc.ref.path,
             status: expenseData.status,
-            receiptUID: expenseData.userId, // receiptUID is the userId of the person who submitted the receipt
-            userName: expenseData.userName, // Directly use the userName from the receipt
+            receiptUID: expenseData.userId,
+            userName: expenseData.userName,
             comments: expenseData.comments || "",
+            ...expenseData // allow extra fields
           };
           return expense;
         });
-        setExpenses(fetchedExpenses); // Set expenses
+        setExpenses(fetchedExpenses);
       });
       return () => unsubscribe();
     }
   }, [userRole]);
 
   const handleReview = async (expenseId: string, newStatus: string) => {
-    const comment = comments[expenseId] || ""; // Get the comment for the current expense
-  
+    const comment = comments[expenseId] || "";
+
     if (newStatus === "Denied" && !comment) {
       alert("You must provide a comment for denied receipts.");
       return;
     }
-  
-    // Ensure you pass the correct userId (reviewer's user ID, not the one associated with the expense)
+
     if (!loggedUID) {
       alert("User ID is not available.");
       return;
     }
-  
+
     try {
-      // Step 1: Fetch the expense document using the expenseId and the receiptUID (the UID of the user who submitted the receipt)
       const expense = expenses.find((exp) => exp.id === expenseId);
       if (!expense) {
         console.error("Expense not found.");
         alert("Expense not found.");
         return;
       }
-  
-      const { receiptUID } = expense; // This is the userId of the person who submitted the receipt
-  
+
+      const { receiptUID } = expense;
+
       if (!receiptUID) {
         alert("Receipt user ID not found.");
         return;
       }
-  
-      // Now that we have the correct receiptUID, we can fetch the document from the correct user collection
+
       const expenseRef = doc(db, "users", receiptUID, "receipts", expenseId);
       const expenseDoc = await getDoc(expenseRef);
-  
-      // Step 2: Check if the document exists
+
       if (!expenseDoc.exists()) {
         console.error("No document found:", expenseRef.path);
         alert(`No document found for ID: ${expenseId}`);
         return;
       }
-  
-      // Step 3: Update the receipt document
+
       const updatedData: any = {
         status: newStatus,
       };
-  
-      // If the status is denied, include the comment
+
       if (newStatus === "Denied" && comment) {
         updatedData.comments = comment;
       }
-  
-      // If the status is approved, only update the comment if it's not empty or null
+
       if (newStatus === "Approved" && comment.trim() !== "") {
         updatedData.comments = comment;
       }
-  
-      // Proceed with the update
+
       await updateDoc(expenseRef, updatedData);
-  
+
       alert(`Expense successfully ${newStatus.toLowerCase()}.`);
     } catch (err) {
       console.error("Error changing expense status:", err);
       alert("Error changing expense status: " + err);
     }
   };
-  
 
-  // Handle comment change for denied receipts
   const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>, expenseId: string) => {
     setComments(prevComments => ({
       ...prevComments,
@@ -146,7 +135,6 @@ export default function ReviewPage() {
     }));
   };
 
-  // Toggle the expanded state for each expense
   const toggleExpand = (expenseId: string) => {
     setExpandedExpense(prev => (prev === expenseId ? null : expenseId));
   };
@@ -170,24 +158,53 @@ export default function ReviewPage() {
           {expenses.map((expense) => (
             <li key={expense.id} className="border-b py-4">
               <div>
-                {/* Display description and associated user name before clicking */}
                 <div onClick={() => toggleExpand(expense.id)} className="cursor-pointer text-blue-600">
-                  <strong>{expense.description}</strong>
+                  <strong>{expense.receiptName}</strong>
                   <p className="text-sm text-gray-500">Submitted by: {expense.userName}</p>
                 </div>
 
-                {/* If expanded, show the full details */}
                 {expandedExpense === expense.id && (
-                  <div className="mt-2">
-                    <p>Total: ${expense.total}</p>
-                    <p>Category: {expense.category}</p>
-                    <p>Subcategory: {expense.subcategory}</p>
-                    <p>Status: {expense.status}</p>
-                    {expense.comments && <p>Comments: {expense.comments}</p>}
+                  <div className="mt-2 space-y-2">
+                    <p><strong>Description:</strong> {expense.description}</p>
+                    <p><strong>Total:</strong> ${expense.total.toFixed(2)}</p>
+                    <p><strong>Status:</strong> {expense.status}</p>
 
-                    {/* Show approve/deny options if status is "Pending" */}
+                    {expense.date && (
+                      <p><strong>Date Uploaded:</strong> {expense.date.toDate().toLocaleString()}</p>
+                    )}
+                    {expense.day && (
+                      <p><strong>Day:</strong> {expense.day}</p>
+                    )}
+                    {expense.time && (
+                      <p><strong>Time:</strong> {expense.time}</p>
+                    )}
+                    {expense.location && (
+                      <p><strong>Location:</strong> {expense.location}</p>
+                    )}
+                    {expense.address && (
+                      <p><strong>Address:</strong> {expense.address}</p>
+                    )}
+                    {expense.category && (
+                      <p><strong>Category:</strong> {expense.category}</p>
+                    )}
+                    {expense.subcategory && (
+                      <p><strong>Subcategory:</strong> {expense.subcategory}</p>
+                    )}
+                    {expense.payMethod && (
+                      <p><strong>Payment Method:</strong> {expense.payMethod}</p>
+                    )}
+                    {expense.phoneNum && expense.phoneNum.trim() !== "" && (
+                      <p><strong>Phone Number:</strong> {expense.phoneNum}</p>
+                    )}
+                    {expense.website && expense.website.trim() !== "" && (
+                      <p><strong>Website:</strong> {expense.website}</p>
+                    )}
+                    {expense.comments && (
+                      <p><strong>Supervisor Comments:</strong> {expense.comments}</p>
+                    )}
+
                     {expense.status === "Pending" && (
-                      <div className="mt-2">
+                      <div className="mt-4">
                         <button
                           onClick={() => handleReview(expense.id, "Approved")}
                           className="bg-green-500 text-white p-2 rounded mr-2"
@@ -201,22 +218,19 @@ export default function ReviewPage() {
                           Deny
                         </button>
 
-                        {/* Show a comment input only for Denied expenses */}
-                        {expense.status === "Pending" && (
-                          <div className="mt-2">
-                            <label htmlFor={`comment-${expense.id}`} className="block text-sm font-medium text-gray-700">
-                              Add a comment:
-                            </label>
-                            <input
-                              type="text"
-                              id={`comment-${expense.id}`}
-                              placeholder="Enter comment"
-                              value={comments[expense.id] || ""}
-                              onChange={(e) => handleCommentChange(e, expense.id)}
-                              className="mt-2 p-2 border border-gray-300 rounded w-full"
-                            />
-                          </div>
-                        )}
+                        <div className="mt-2">
+                          <label htmlFor={`comment-${expense.id}`} className="block text-sm font-medium text-gray-700">
+                            Add a comment:
+                          </label>
+                          <input
+                            type="text"
+                            id={`comment-${expense.id}`}
+                            placeholder="Enter comment"
+                            value={comments[expense.id] || ""}
+                            onChange={(e) => handleCommentChange(e, expense.id)}
+                            className="mt-2 p-2 border border-gray-300 rounded w-full"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -226,13 +240,12 @@ export default function ReviewPage() {
           ))}
         </ul>
       )}
-      <div className="flex items-center justify-center min-h-screen">
-      {/* Back button to navigate to the homepage */}
-      <Link href="/">
-        <button className="bg-gray-500 text-white p-2 rounded mt-4">
-          Back to Home
-        </button>
-      </Link>
+      <div className="flex items-center justify-center">
+        <Link href="/">
+          <button className="bg-gray-500 text-white p-2 rounded mt-4">
+            Back to Home
+          </button>
+        </Link>
       </div>
     </div>
   );

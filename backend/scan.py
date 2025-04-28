@@ -7,7 +7,6 @@ load_dotenv(dotenv_path=env_path)
 
 load_dotenv()
 
-
 import cv2
 import pytesseract
 import numpy as np
@@ -22,13 +21,11 @@ from google import genai
 # =============== OCR Utilities ===============
 
 def preprocess_image(image: Image.Image) -> np.ndarray:
-    """Preprocess the image for better OCR accuracy."""
     gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return thresh
 
 def extract_text(image: np.ndarray) -> str:
-    """Extract raw text from the image using Tesseract OCR."""
     return pytesseract.image_to_string(image)
 
 # =============== AI Parsing Utilities ===============
@@ -47,7 +44,8 @@ def generate_ai_response(extracted_text: str) -> dict | None:
     - Store phone number
     - Store address (single line)
     - Store website (if any)
-    - Date and time of purchase
+    - Date of purchase (format: MM/DD/YYYY) 
+    - Time of purchase
     - List of purchased items with their prices
     - Total price (MUST be the largest monetary amount on the receipt)
     - Payment method (e.g., credit card, cash)
